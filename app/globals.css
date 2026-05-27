@@ -200,3 +200,63 @@ tr:hover{background:rgba(250,204,21,.08)}
     border-radius:18px
   }
 }
+.toolbar{
+  display:flex;
+  gap:10px;
+  margin-bottom:18px;
+  overflow:auto;
+}
+
+.toolbar input{
+  padding:13px 16px;
+  border-radius:16px;
+  border:1px solid rgba(148,163,184,.25);
+  background:transparent;
+  color:inherit;
+}
+
+.panel{
+  max-height:calc(100vh - 330px);
+  overflow:hidden;
+}
+
+.table-wrap{
+  max-height:calc(100vh - 430px);
+  overflow:auto;
+  border-radius:18px;
+}
+
+thead th{
+  position:sticky;
+  top:0;
+  z-index:2;
+}
+
+.dark thead th{
+  background:#080808;
+}
+
+.light thead th{
+  background:#fff;
+}
+
+@media print{
+  .menu,.plants,.toolbar,.icon-btn,.search{
+    display:none!important;
+  }
+
+  .panel{
+    max-height:none;
+    overflow:visible;
+  }
+
+  .table-wrap{
+    max-height:none;
+    overflow:visible;
+  }
+
+  body{
+    background:white!important;
+    color:black!important;
+  }
+}
