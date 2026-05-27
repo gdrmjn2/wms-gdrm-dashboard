@@ -322,40 +322,38 @@ return Array.from(unique.values());
 
   if (menu === "FIFO Matrix") {
 
-    head = [
-      "SKU RM",
-      "Nama RM",
-      "FIFO 1",
-      "FIFO 2",
-      "FIFO 3"
+  head = [
+    "SKU RM",
+    "Nama RM",
+    "FIFO 1",
+    "FIFO 2",
+    "FIFO 3"
+  ];
+
+  body = fifoView.map((r: any) => {
+
+    const fifoText = (idx: number) => {
+      const f = r.fifo?.[idx];
+
+      if (!f) return "-";
+
+      return [
+        `Batch: ${f.no_batch || "-"}`,
+        `Qty: ${fmt0(f.tot_qty_kemasan)} zak`,
+        `KG: ${fmt2(f.tot_qty_kg)}`,
+        `Datang: ${f.tanggal_kedatangan || "-"}`
+      ].join("\n");
+    };
+
+    return [
+      r.sku_rm || "-",
+      r.nama_rm || "-",
+      fifoText(0),
+      fifoText(1),
+      fifoText(2)
     ];
-
-    body = fifoView.map((r: any) => [
-
-      r.sku_rm,
-
-      r.nama_rm,
-
-      r.fifo[0]
-        ? `${r.fifo[0].no_batch || "-"} | ${fmt0(r.fifo[0].tot_qty_kemasan)} zak | ${r.fifo[0].tanggal_kedatangan}`
-        : "-",
-
-      r.fifo[1]
-        ? `${r.fifo[1].no_batch || "-"} | ${fmt0(r.fifo[1].tot_qty_kemasan)} zak | ${r.fifo[1].tanggal_kedatangan}`
-        : "-",
-
-      r.fifo[2]
-        ? `${r.fifo[2].no_batch || "-"} | ${fmt0(r.fifo[2].tot_qty_kemasan)} zak | ${r.fifo[2].tanggal_kedatangan}`
-        : "-"
-
-    ]);
-  }
-
-  // =====================================
-  // STOCK
-  // =====================================
-
-  else if (menu === "Stock Ready") {
+  });
+}
 
     head = [
       "Plant",
@@ -798,21 +796,62 @@ function ServiceTable({ rows }: any) {
   );
 }
 
-function BonanTable({ rows, keluar }: any) {
+function BonanTable({ rows }: any) {
   return (
-    <Tbl heads={["Tanggal","Plant","SKU","Nama RM","Bon Zak","Realisasi","Kurang"]}>
+    <Tbl
+      heads={[
+        "Tanggal",
+        "Plant",
+        "SKU",
+        "Nama RM",
+        "Bon PCS",
+        "Bon KG",
+        "Terkirim PCS",
+        "Terkirim KG",
+        "% PCS",
+        "% KG",
+        "Kurang PCS",
+        "Kurang KG",
+        "Note",
+      ]}
+    >
       {rows.map((r: any, i: number) => {
-        const real   = keluar.filter((k: any) => String(k.sku_rm) === String(r.sku)).reduce((a: number, b: any) => a + Number(b.qty_kemasan || 0), 0);
-        const kurang = Number(r.qty_bon_zak || 0) - real;
+        const bonPcs = Number(r.qty_bon_zak || 0);
+        const bonKg = Number(r.qty_bon_kg || 0);
+        const kirimPcs = Number(r.qty_terkirim_pcs || 0);
+        const kirimKg = Number(r.qty_terkirim_kg || 0);
+
+        const persenPcs = bonPcs ? (kirimPcs / bonPcs) * 100 : 0;
+        const persenKg = bonKg ? (kirimKg / bonKg) * 100 : 0;
+
+        const kurangPcs = bonPcs - kirimPcs;
+        const kurangKg = bonKg - kirimKg;
+
         return (
           <tr key={i}>
             <td className="muted">{r.tanggal}</td>
             <td><Badge text={r.plant} variant="blue" /></td>
             <td className="bold">{r.sku}</td>
             <td>{r.nama_rm}</td>
-            <td className="num blue">{fmt0(r.qty_bon_zak)}</td>
-            <td className="num green">{fmt0(real)}</td>
-            <td><Badge text={fmt0(kurang)} variant={kurang > 0 ? "kurang" : "aman"} /></td>
+            <td className="num blue">{fmt0(bonPcs)}</td>
+            <td className="num blue">{fmt2(bonKg)}</td>
+            <td className="num green">{fmt0(kirimPcs)}</td>
+            <td className="num green">{fmt2(kirimKg)}</td>
+            <td>{fmt2(persenPcs)}%</td>
+            <td>{fmt2(persenKg)}%</td>
+            <td>
+              <Badge
+                text={fmt0(kurangPcs)}
+                variant={kurangPcs > 0 ? "kurang" : "aman"}
+              />
+            </td>
+            <td>
+              <Badge
+                text={fmt2(kurangKg)}
+                variant={kurangKg > 0 ? "kurang" : "aman"}
+              />
+            </td>
+            <td className="muted">{r.note}</td>
           </tr>
         );
       })}
