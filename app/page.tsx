@@ -859,10 +859,10 @@ function BonanTable({ rows }: any) {
               <Badge
                 text={fmt0(kurangPcs)}
                 variant={
-                  kurangPcs > 0
-                    ? "danger"
-                    : "success"
-                }
+                kurangPcs > 0
+                ? "kurang"
+                : "aman"
+}
               />
             </td>
 
@@ -870,10 +870,10 @@ function BonanTable({ rows }: any) {
               <Badge
                 text={fmt2(kurangKg)}
                 variant={
-                  kurangKg > 0
-                    ? "danger"
-                    : "success"
-                }
+  kurangKg > 0
+    ? "kurang"
+    : "aman"
+}
               />
             </td>
 
