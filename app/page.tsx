@@ -148,7 +148,11 @@ const [unlocked, setUnlocked] = useState(() => {
     supabase.from("transaksi_hold").select("*").limit(3000),
     supabase.from("transaksi_masuk").select("*").limit(10000),
   ]);
-
+async function loadAll() {
+  const [s, sl, b, k, kg, h, m] = await Promise.all([...]);
+  
+  console.log("transaksi_masuk:", m.data?.length, m.error);
+  console.log("sample masuk:", m.data?.[0]);
   setStock(s.data || []);
   setService(sl.data || []);
   setBonan(b.data || []);
