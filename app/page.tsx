@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Sun, Moon, Search, FileDown, Send, Package, ArrowUpDown, Warehouse, TrendingUp, ClipboardList, Route, Bell } from "lucide-react";
+import { Sun, Moon, Search, FileDown, Send, Package, ArrowUpDown, Warehouse, TrendingUp, ClipboardList, Route, Bell, RefreshCcw, LogOut } from "lucide-react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "",
@@ -105,7 +105,10 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
    MAIN DASHBOARD
 ───────────────────────────────────────────── */
 export default function Home() {
-  const [unlocked, setUnlocked] = useState(false);
+const [unlocked, setUnlocked] = useState(() => {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("wms_auth") === "OK";
+});
   const [dark, setDark] = useState(true);
   const [menu, setMenu] = useState("Stock Ready");
   const [plant, setPlant] = useState("ALL");
@@ -226,7 +229,14 @@ export default function Home() {
     w.document.close();
     w.print();
   }
+  
+function logout() {
 
+  localStorage.removeItem("wms_auth");
+
+  setUnlocked(false);
+}
+  
   if (!unlocked) return <PinScreen onUnlock={() => setUnlocked(true)} />;
 
   const nowLabel = new Date().toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
@@ -298,9 +308,40 @@ export default function Home() {
             <div style={{ flex: 1 }} />
 
             <div className="panel-actions">
-              <button className="action-btn primary" onClick={downloadCurrentDataPDF}><FileDown size={14} /> PDF</button>
-              <button className="action-btn" onClick={() => alert("Telegram segera disambungkan")}><Send size={14} /> Telegram</button>
-            </div>
+
+  <button
+    className="action-btn"
+    onClick={loadAll}
+  >
+    <RefreshCcw size={14} />
+    Refresh
+  </button>
+
+  <button
+    className="action-btn primary"
+    onClick={downloadCurrentDataPDF}
+  >
+    <FileDown size={14} />
+    PDF
+  </button>
+
+  <button
+    className="action-btn"
+    onClick={() => alert("Telegram segera disambungkan")}
+  >
+    <Send size={14} />
+    Telegram
+  </button>
+
+  <button
+    className="action-btn"
+    onClick={logout}
+  >
+    <LogOut size={14} />
+    Logout
+  </button>
+
+</div>
           </div>
 
           {/* Panel body */}
