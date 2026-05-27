@@ -256,13 +256,49 @@ function logout() {
           ))}
         </div>
 
-        <div className="topbar-right">
-          <span className="top-date">{nowLabel}</span>
+       <div className="topbar-right">
 
-          <div className="search-box">
-            <Search size={14} />
-            <input placeholder="Cari semua data..." value={search} onChange={(e) => setSearch(e.target.value)} />
-          </div>
+  <span className="top-date">
+    {nowLabel}
+  </span>
+
+  <div className="search-box">
+    <Search size={14} />
+    <input
+      placeholder="Cari semua data..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
+  </div>
+
+  {/* Refresh */}
+  <button
+    className="icon-round"
+    onClick={loadAll}
+    title="Refresh"
+  >
+    <RefreshCcw size={16} />
+  </button>
+
+  {/* Dark Mode */}
+  <button
+    className="icon-round"
+    onClick={() => setDark(!dark)}
+    title="Toggle Tema"
+  >
+    {dark ? <Sun size={16} /> : <Moon size={16} />}
+  </button>
+
+  {/* Logout */}
+  <button
+    className="icon-round"
+    onClick={logout}
+    title="Logout"
+  >
+    <LogOut size={16} />
+  </button>
+
+</div>
 
           <button className="icon-round" onClick={() => setDark(!dark)} aria-label="Toggle tema">
             {dark ? <Sun size={16} /> : <Moon size={16} />}
@@ -331,14 +367,6 @@ function logout() {
   >
     <Send size={14} />
     Telegram
-  </button>
-
-  <button
-    className="action-btn"
-    onClick={logout}
-  >
-    <LogOut size={14} />
-    Logout
   </button>
 
 </div>
