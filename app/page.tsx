@@ -168,27 +168,88 @@ const [unlocked, setUnlocked] = useState(() => {
   }, [stockFiltered]);
 
   const alerts = useMemo(() => {
-    const today = new Date();
-    const a: any[] = [];
-    stockFiltered.forEach((r) => {
-      if (r.tanggal_kedatangan) {
-        const age = Math.floor((today.getTime() - new Date(r.tanggal_kedatangan).getTime()) / 86400000);
-        if (age > 4) a.push({ type: "LIFETIME > 4 HARI", category: "AGING", rm: r.nama_rm, sku: r.sku_rm, batch: r.no_batch, qty: r.tot_qty_kemasan, kg: r.tot_qty_kg, plant: r.plant, lokasi: r.lokasi_rm, value: age });
-      }
-      if (r.tanggal_expired) {
-        const left = Math.floor((new Date(r.tanggal_expired).getTime() - today.getTime()) / 86400000);
-        if (left <= 20) a.push({ type: "MENDEKATI EXPIRED", category: "EXPIRED", rm: r.nama_rm, sku: r.sku_rm, batch: r.no_batch, qty: r.tot_qty_kemasan, kg: r.tot_qty_kg, plant: r.plant, lokasi: r.lokasi_rm, value: left });
-      }
-    });
-    hold.forEach((r) => {
-      const okPlant = plant === "ALL" || String(r.plant) === plant || String(r.plant_pemilik) === plant;
-      if (!okPlant) return;
-      const age = r.tanggal ? Math.floor((today.getTime() - new Date(r.tanggal).getTime()) / 86400000) : 0;
-      a.push({ type: "HOLD / GANTUNGAN", category: "HOLD", rm: r.nama_rm, sku: r.sku_rm, batch: "-", qty: r.qty_kemasan, kg: r.qty_kg, plant: r.plant, lokasi: "-", value: age, note: r.note, status: r.status });
-    });
-    return a;
-  }, [stockFiltered, hold, plant]);
+  const today = new Date();
+  const a: any[] = [];
 
+  // 1. LIFETIME & EXPIRED dari DATA_STOK_GDRM / stock_live
+  stockFiltered.forEach((r) => {
+    if (r.tanggal_kedatangan) {
+      const age = Math.floor(
+        (today.getTime() - new Date(r.tanggal_kedatangan).getTime()) /
+          86400000
+      );
+
+      if (age > 4) {
+        a.push({
+          type: "LIFETIME > 4 HARI",
+          category: "AGING",
+          rm: r.nama_rm,
+          sku: r.sku_rm,
+          batch: r.no_batch,
+          qty: r.tot_qty_kemasan,
+          kg: r.tot_qty_kg,
+          plant: r.plant,
+          lokasi: r.lokasi_rm,
+          value: age,
+        });
+      }
+    }
+
+    if (r.tanggal_expired) {
+      const left = Math.floor(
+        (new Date(r.tanggal_expired).getTime() - today.getTime()) / 86400000
+      );
+
+      if (left <= 20) {
+        a.push({
+          type: "MENDEKATI EXPIRED",
+          category: "EXPIRED",
+          rm: r.nama_rm,
+          sku: r.sku_rm,
+          batch: r.no_batch,
+          qty: r.tot_qty_kemasan,
+          kg: r.tot_qty_kg,
+          plant: r.plant,
+          lokasi: r.lokasi_rm,
+          value: left,
+        });
+      }
+    }
+  });
+
+  // 2. HOLD dari DATA_RM_GANTUNGAN+HOLD / transaksi_hold
+  hold.forEach((r) => {
+    const okPlant =
+      plant === "ALL" ||
+      String(r.plant) === plant ||
+      String(r.plant_pemilik) === plant;
+
+    if (!okPlant) return;
+
+    const age = r.tanggal
+      ? Math.floor(
+          (today.getTime() - new Date(r.tanggal).getTime()) / 86400000
+        )
+      : 0;
+
+    a.push({
+      type: "HOLD / GANTUNGAN",
+      category: "HOLD",
+      rm: r.nama_rm,
+      sku: r.sku_rm,
+      batch: "-",
+      qty: r.qty_kemasan,
+      kg: r.qty_kg,
+      plant: r.plant,
+      lokasi: "-",
+      value: age,
+      note: r.note,
+      status: r.status,
+    });
+  });
+
+  return a;
+}, [stockFiltered, hold, plant]);
   const stockView     = stockFiltered.filter(matchSearch);
   const fifoView      = fifo.filter(matchSearch);
   const alertView     = alerts.filter(matchSearch);
