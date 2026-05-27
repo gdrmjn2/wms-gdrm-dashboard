@@ -311,186 +311,146 @@ return Array.from(unique.values());
   }
 
   function downloadCurrentDataPDF() {
-
   let title = menu;
   let head: string[] = [];
   let body: any[][] = [];
 
-  // =====================================
-  // FIFO
-  // =====================================
-
   if (menu === "FIFO Matrix") {
+    head = ["SKU RM", "Nama RM", "FIFO 1", "FIFO 2", "FIFO 3"];
 
-  head = [
-    "SKU RM",
-    "Nama RM",
-    "FIFO 1",
-    "FIFO 2",
-    "FIFO 3"
-  ];
+    body = fifoView.map((r: any) => {
+      const fifoText = (idx: number) => {
+        const f = r.fifo?.[idx];
+        if (!f) return "-";
 
-  body = fifoView.map((r: any) => {
-
-    const fifoText = (idx: number) => {
-      const f = r.fifo?.[idx];
-
-      if (!f) return "-";
+        return [
+          `Batch: ${f.no_batch || "-"}`,
+          `Qty: ${fmt0(f.tot_qty_kemasan)} zak`,
+          `KG: ${fmt2(f.tot_qty_kg)}`,
+          `Datang: ${f.tanggal_kedatangan || "-"}`
+        ].join("\n");
+      };
 
       return [
-        `Batch: ${f.no_batch || "-"}`,
-        `Qty: ${fmt0(f.tot_qty_kemasan)} zak`,
-        `KG: ${fmt2(f.tot_qty_kg)}`,
-        `Datang: ${f.tanggal_kedatangan || "-"}`
-      ].join("\n");
-    };
-
-    return [
-      r.sku_rm || "-",
-      r.nama_rm || "-",
-      fifoText(0),
-      fifoText(1),
-      fifoText(2)
-    ];
-  });
-}
-
-    head = [
-      "Plant",
-      "SKU QR",
-      "SKU RM",
-      "Nama RM",
-      "Batch",
-      "Qty",
-      "KG",
-      "Lokasi"
-    ];
+        r.sku_rm || "-",
+        r.nama_rm || "-",
+        fifoText(0),
+        fifoText(1),
+        fifoText(2)
+      ];
+    });
+  } else if (menu === "Stock Ready") {
+    head = ["Plant", "SKU QR", "SKU RM", "Nama RM", "Batch", "Qty", "KG", "Lokasi"];
 
     body = stockView.map((r: any) => [
-
       r.plant,
       r.sku_qr,
       r.sku_rm,
       r.nama_rm,
       r.no_batch,
-
       fmt0(r.tot_qty_kemasan),
-
       fmt2(r.tot_qty_kg),
-
       r.lokasi_rm
-
     ]);
-  }
-
-  // =====================================
-  // ALERT
-  // =====================================
-
-  else if (menu === "Alert Center") {
-
-    head = [
-      "Kategori",
-      "SKU",
-      "RM",
-      "Plant",
-      "Batch",
-      "Qty",
-      "KG",
-      "Hari",
-      "Note"
-    ];
+  } else if (menu === "Alert Center") {
+    head = ["Kategori", "SKU", "RM", "Plant", "Batch", "Qty", "KG", "Hari", "Note"];
 
     body = alertView.map((r: any) => [
-
       r.type,
       r.sku,
       r.rm,
       r.plant,
       r.batch,
-
       fmt0(r.qty),
-
       fmt2(r.kg),
-
       r.value,
-
       r.note || r.status || ""
-
     ]);
-  }
+  } else if (menu === "Bonan PPIC") {
+    head = [
+      "Tanggal",
+      "Plant",
+      "SKU",
+      "Nama RM",
+      "Bon PCS",
+      "Bon KG",
+      "Terkirim PCS",
+      "Terkirim KG",
+      "% PCS",
+      "% KG",
+      "Kurang PCS",
+      "Kurang KG",
+      "Note"
+    ];
 
-  // =====================================
-  // DEFAULT
-  // =====================================
+    body = bonanView.map((r: any) => {
+      const bonPcs = Number(r.qty_bon_zak || 0);
+      const bonKg = Number(r.qty_bon_kg || 0);
+      const kirimPcs = Number(r.qty_terkirim_pcs || 0);
+      const kirimKg = Number(r.qty_terkirim_kg || 0);
 
-  else {
+      const persenPcs = bonPcs ? (kirimPcs / bonPcs) * 100 : 0;
+      const persenKg = bonKg ? (kirimKg / bonKg) * 100 : 0;
 
+      return [
+        r.tanggal,
+        r.plant,
+        r.sku,
+        r.nama_rm,
+        fmt0(bonPcs),
+        fmt2(bonKg),
+        fmt0(kirimPcs),
+        fmt2(kirimKg),
+        `${fmt2(persenPcs)}%`,
+        `${fmt2(persenKg)}%`,
+        fmt0(bonPcs - kirimPcs),
+        fmt2(bonKg - kirimKg),
+        r.note || ""
+      ];
+    });
+  } else {
     const data = getCurrentData();
 
     if (!data.length) {
-      alert("Tidak ada data");
+      alert("Tidak ada data untuk PDF");
       return;
     }
 
     head = Object.keys(data[0]);
-
-    body = data.map((row: any) =>
-      head.map((k) => row[k] ?? "")
-    );
+    body = data.map((row: any) => head.map((k) => row[k] ?? ""));
   }
 
-  // =====================================
-  // PDF GENERATE
-  // =====================================
+  if (!body.length) {
+    alert("Tidak ada data untuk PDF");
+    return;
+  }
 
-  const pdf = new jsPDF(
-    "landscape",
-    "mm",
-    "a4"
-  );
+  const pdf = new jsPDF("landscape", "mm", "a4");
 
   pdf.setFontSize(14);
-
-  pdf.text(
-    `WMS GDRM - ${title}`,
-    14,
-    12
-  );
+  pdf.text(`WMS GDRM - ${title}`, 14, 12);
 
   pdf.setFontSize(9);
-
-  pdf.text(
-    `Plant: ${plant} | Mode: ${dateMode} | Tanggal: ${dateFilter}`,
-    14,
-    18
-  );
+  pdf.text(`Plant: ${plant} | Mode: ${dateMode} | Tanggal: ${dateFilter}`, 14, 18);
 
   autoTable(pdf, {
-
     head: [head],
-
     body,
-
     startY: 24,
-
     styles: {
       fontSize: 7,
       cellPadding: 1.8,
-      overflow: "linebreak",
+      overflow: "linebreak"
     },
-
     headStyles: {
       fillColor: [17, 24, 39],
-      textColor: [255, 255, 255],
+      textColor: [255, 255, 255]
     },
-
     margin: {
       top: 24,
       left: 8,
       right: 8
-    },
-
+    }
   });
 
   pdf.save(`WMS_GDRM_${menu}.pdf`);
