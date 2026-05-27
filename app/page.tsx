@@ -30,15 +30,22 @@ export default function Home() {
 
   }, [unlocked]);
 
-  async function loadStock(){
+ async function loadStock(){
 
-    const { data } = await supabase
-      .from("stock_live")
-      .select("*")
-      .order("sku_rm");
+  const { data, error } = await supabase
+    .from("stock_live")
+    .select("*")
+    .limit(10);
 
-    setStock(data || []);
+  if(error){
+    alert("SUPABASE ERROR: " + error.message);
+    console.log(error);
+    return;
   }
+
+  alert("DATA MASUK: " + (data?.length || 0));
+  setStock(data || []);
+}
 
   if(!unlocked){
 
