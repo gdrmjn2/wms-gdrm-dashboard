@@ -41,7 +41,9 @@ export default function Home() {
   const [keluar, setKeluar] = useState<any[]>([]);
   const [kapasitas, setKapasitas] = useState<any[]>([]);
   const [hold, setHold] = useState<any[]>([]);
-
+const todayStr = new Date().toISOString().slice(0, 10);
+const [dateFilter, setDateFilter] = useState(todayStr);
+const [dateMode, setDateMode] = useState("TODAY");
   const correctPin = process.env.NEXT_PUBLIC_PIN || "0000";
 
   useEffect(() => {
@@ -67,10 +69,18 @@ export default function Home() {
   }
 
   const stockFiltered = stock.filter((r) => {
-    const okPlant = plant === "ALL" || String(r.plant) === plant;
-    const okSearch = JSON.stringify(r).toLowerCase().includes(search.toLowerCase());
-    return okPlant && okSearch;
-  });
+  const okPlant = plant === "ALL" || String(r.plant) === plant;
+  const okSearch = JSON.stringify(r).toLowerCase().includes(search.toLowerCase());
+
+  const rowDate = r.tanggal_kedatangan
+    ? String(r.tanggal_kedatangan).slice(0, 10)
+    : "";
+
+  const okDate =
+    dateMode === "ALL" || !dateFilter || rowDate === dateFilter;
+
+  return okPlant && okSearch && okDate;
+});
 
   const fifo = useMemo(() => {
     const group: any = {};
@@ -141,29 +151,7 @@ export default function Home() {
           ))}
         </div>
 
-        <section className="toolbar">
-  <input
-    type="date"
-    onChange={(e) => {
-      const d = e.target.value;
-      if (!d) return;
-      alert("Filter tanggal dipilih: " + d);
-    }}
-  />
-
-  <button onClick={() => window.print()}>
-    Download PDF
-  </button>
-
-  <button
-    onClick={() =>
-      alert("Telegram nanti kita sambungkan setelah bot token siap")
-    }
-  >
-    Send Telegram
-  </button>
-</section>
-
+        
        <section className="cards">
   <Card title="Batch Ready" value={fmt0(stockFiltered.length)} />
   <Card
@@ -193,7 +181,34 @@ export default function Home() {
 
         <section className="panel">
           <div className="panel-top">
-  <input type="date" />
+  <div className="date-tools">
+    <button
+      className={dateMode === "TODAY" ? "active" : ""}
+      onClick={() => {
+        setDateMode("TODAY");
+        setDateFilter(todayStr);
+      }}
+    >
+      Today
+    </button>
+
+    <button
+      className={dateMode === "ALL" ? "active" : ""}
+      onClick={() => setDateMode("ALL")}
+    >
+      All
+    </button>
+
+    <input
+      type="date"
+      value={dateFilter}
+      onChange={(e) => {
+        setDateMode("TODAY");
+        setDateFilter(e.target.value);
+      }}
+    />
+  </div>
+
   <div className="panel-actions">
     <button onClick={() => window.print()}>Download PDF</button>
     <button onClick={() => alert("Telegram nanti disambungkan")}>
