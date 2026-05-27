@@ -138,7 +138,7 @@ const [unlocked, setUnlocked] = useState(() => {
   }
 }, [unlocked]);
   
- async function loadAll() {
+async function loadAll() {
   const [s, sl, b, k, kg, h, m] = await Promise.all([
     supabase.from("stock_live").select("*").limit(10000),
     supabase.from("master_kedatangan").select("*").limit(3000),
@@ -148,11 +148,7 @@ const [unlocked, setUnlocked] = useState(() => {
     supabase.from("transaksi_hold").select("*").limit(3000),
     supabase.from("transaksi_masuk").select("*").limit(10000),
   ]);
-async function loadAll() {
-  const [s, sl, b, k, kg, h, m] = await Promise.all([...]);
-  
-  console.log("transaksi_masuk:", m.data?.length, m.error);
-  console.log("sample masuk:", m.data?.[0]);
+
   setStock(s.data || []);
   setService(sl.data || []);
   setBonan(b.data || []);
@@ -161,6 +157,7 @@ async function loadAll() {
   setHold(h.data || []);
   setMasuk(m.data || []);
 }
+  
   function matchSearch(row: any) {
     return !search || JSON.stringify(row).toLowerCase().includes(search.toLowerCase());
   }
@@ -331,22 +328,15 @@ const jalurVariants = Array.from(
 );
 
 const stokJalurView = useMemo(() => {
-  const masukFiltered = masuk.filter((r: any) => {
-    const okPlant = plant === "ALL" || String(r.plant) === plant;
+const masukFiltered = masuk.filter((r: any) => {
+  const okPlant =
+    plant === "ALL" || String(r.plant) === plant;
 
-    const rowDate = r.tanggal_kedatangan
-      ? String(r.tanggal_kedatangan).slice(0, 10)
-      : "";
+  const okVariant =
+    jalurVariant === "ALL" || getSkuVariant(r) === jalurVariant;
 
-    const okDate =
-      dateMode === "ALL" || !dateFilter || rowDate === dateFilter;
-
-    const okVariant =
-      jalurVariant === "ALL" || getSkuVariant(r) === jalurVariant;
-
-    return okPlant && okDate && okVariant;
-  });
-
+  return okPlant && okVariant;
+});
   const group: any = {};
 
   masukFiltered.forEach((r: any) => {
@@ -650,7 +640,16 @@ function logout() {
           {/* Panel header */}
           <div className="panel-header">
             <span className="panel-title">{menu}</span>
-            <span className="panel-count">{getCurrentData().length} baris</span>
+           <span className="panel-count">
+  {getCurrentData().length} baris
+  {menu === "Stok Jalur" && (
+    <>
+      {" "} | masuk: {masuk.length}
+      {" "} | keluar: {keluar.length}
+      {" "} | jalur: {stokJalurView.length}
+    </>
+  )}
+</span>
 
             <div className="date-filter">
               <button className={`date-btn${dateMode === "TODAY" ? " active" : ""}`} onClick={() => { setDateMode("TODAY"); setDateFilter(todayStr); }}>Today</button>
