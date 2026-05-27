@@ -1,5 +1,6 @@
 "use client";
-
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Sun, Moon, Search, FileDown, Send, Package, ArrowUpDown, Warehouse, TrendingUp, ClipboardList, Route, Bell, RefreshCcw, LogOut } from "lucide-react";
@@ -310,27 +311,192 @@ return Array.from(unique.values());
   }
 
   function downloadCurrentDataPDF() {
-    const data = getCurrentData();
-    if (!data.length) { alert("Tidak ada data untuk PDF"); return; }
-    const keys = Object.keys(data[0]);
-    const html = `<html><head><title>${menu}</title><style>
-      body{font-family:Arial;padding:22px;color:#111}
-      h2{margin:0 0 4px}p{margin:0 0 18px;color:#555}
-      table{width:100%;border-collapse:collapse;font-size:11px}
-      th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}
-      th{background:#111;color:white}
-    </style></head><body>
-      <h2>GDRM LEVEL UP - ${menu}</h2>
-      <p>Plant: ${plant} | Mode: ${dateMode} | Tanggal: ${dateFilter}</p>
-      <table><thead><tr>${keys.map((k) => `<th>${k}</th>`).join("")}</tr></thead>
-      <tbody>${data.map((row) => `<tr>${keys.map((k) => `<td>${row[k] ?? ""}</td>`).join("")}</tr>`).join("")}</tbody>
-      </table></body></html>`;
-    const w = window.open("", "_blank");
-    if (!w) return;
-    w.document.write(html);
-    w.document.close();
-    w.print();
+
+  let title = menu;
+  let head: string[] = [];
+  let body: any[][] = [];
+
+  // =====================================
+  // FIFO
+  // =====================================
+
+  if (menu === "FIFO Matrix") {
+
+    head = [
+      "SKU RM",
+      "Nama RM",
+      "FIFO 1",
+      "FIFO 2",
+      "FIFO 3"
+    ];
+
+    body = fifoView.map((r: any) => [
+
+      r.sku_rm,
+
+      r.nama_rm,
+
+      r.fifo[0]
+        ? `${r.fifo[0].no_batch || "-"} | ${fmt0(r.fifo[0].tot_qty_kemasan)} zak | ${r.fifo[0].tanggal_kedatangan}`
+        : "-",
+
+      r.fifo[1]
+        ? `${r.fifo[1].no_batch || "-"} | ${fmt0(r.fifo[1].tot_qty_kemasan)} zak | ${r.fifo[1].tanggal_kedatangan}`
+        : "-",
+
+      r.fifo[2]
+        ? `${r.fifo[2].no_batch || "-"} | ${fmt0(r.fifo[2].tot_qty_kemasan)} zak | ${r.fifo[2].tanggal_kedatangan}`
+        : "-"
+
+    ]);
   }
+
+  // =====================================
+  // STOCK
+  // =====================================
+
+  else if (menu === "Stock Ready") {
+
+    head = [
+      "Plant",
+      "SKU QR",
+      "SKU RM",
+      "Nama RM",
+      "Batch",
+      "Qty",
+      "KG",
+      "Lokasi"
+    ];
+
+    body = stockView.map((r: any) => [
+
+      r.plant,
+      r.sku_qr,
+      r.sku_rm,
+      r.nama_rm,
+      r.no_batch,
+
+      fmt0(r.tot_qty_kemasan),
+
+      fmt2(r.tot_qty_kg),
+
+      r.lokasi_rm
+
+    ]);
+  }
+
+  // =====================================
+  // ALERT
+  // =====================================
+
+  else if (menu === "Alert Center") {
+
+    head = [
+      "Kategori",
+      "SKU",
+      "RM",
+      "Plant",
+      "Batch",
+      "Qty",
+      "KG",
+      "Hari",
+      "Note"
+    ];
+
+    body = alertView.map((r: any) => [
+
+      r.type,
+      r.sku,
+      r.rm,
+      r.plant,
+      r.batch,
+
+      fmt0(r.qty),
+
+      fmt2(r.kg),
+
+      r.value,
+
+      r.note || r.status || ""
+
+    ]);
+  }
+
+  // =====================================
+  // DEFAULT
+  // =====================================
+
+  else {
+
+    const data = getCurrentData();
+
+    if (!data.length) {
+      alert("Tidak ada data");
+      return;
+    }
+
+    head = Object.keys(data[0]);
+
+    body = data.map((row: any) =>
+      head.map((k) => row[k] ?? "")
+    );
+  }
+
+  // =====================================
+  // PDF GENERATE
+  // =====================================
+
+  const pdf = new jsPDF(
+    "landscape",
+    "mm",
+    "a4"
+  );
+
+  pdf.setFontSize(14);
+
+  pdf.text(
+    `WMS GDRM - ${title}`,
+    14,
+    12
+  );
+
+  pdf.setFontSize(9);
+
+  pdf.text(
+    `Plant: ${plant} | Mode: ${dateMode} | Tanggal: ${dateFilter}`,
+    14,
+    18
+  );
+
+  autoTable(pdf, {
+
+    head: [head],
+
+    body,
+
+    startY: 24,
+
+    styles: {
+      fontSize: 7,
+      cellPadding: 1.8,
+      overflow: "linebreak",
+    },
+
+    headStyles: {
+      fillColor: [17, 24, 39],
+      textColor: [255, 255, 255],
+    },
+
+    margin: {
+      top: 24,
+      left: 8,
+      right: 8
+    },
+
+  });
+
+  pdf.save(`WMS_GDRM_${menu}.pdf`);
+}
   
 function logout() {
 
