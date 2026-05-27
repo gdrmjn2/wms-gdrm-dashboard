@@ -1,8 +1,195 @@
-*{
-  box-sizing:border-box;
+* {
+  box-sizing: border-box;
 }
 
-body{
-  margin:0;
-  font-family:Arial, sans-serif;
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+.screen {
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.dark {
+  background: #020617;
+  color: white;
+}
+
+.light {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.wrap {
+  max-width: 1280px;
+  margin: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.header p {
+  opacity: 0.65;
+}
+
+.icon-btn,
+button {
+  border: 0;
+  border-radius: 16px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.dark button,
+.dark .card,
+.dark .panel,
+.dark .login-card {
+  background: #0f172a;
+  color: white;
+}
+
+.light button,
+.light .card,
+.light .panel,
+.light .login-card {
+  background: white;
+  color: #0f172a;
+}
+
+button.active,
+.plants button.active,
+.menu button.active {
+  background: #2563eb;
+  color: white;
+}
+
+.plants,
+.menu {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  margin-bottom: 18px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.card {
+  border-radius: 24px;
+  padding: 20px;
+}
+
+.card-title {
+  opacity: 0.65;
+  font-size: 14px;
+}
+
+.card-value {
+  font-size: 28px;
+  font-weight: 900;
+  margin-top: 8px;
+}
+
+.panel {
+  border-radius: 24px;
+  padding: 18px;
+}
+
+.search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.search input,
+.login-card input {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid #334155;
+  background: transparent;
+  color: inherit;
+  outline: none;
+}
+
+.table-wrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th {
+  text-align: left;
+  opacity: 0.7;
+}
+
+td,
+th {
+  padding: 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 360px;
+  margin: 20vh auto;
+  border-radius: 28px;
+  padding: 30px;
+  text-align: center;
+}
+
+.login-card input {
+  text-align: center;
+  font-size: 28px;
+  letter-spacing: 8px;
+}
+
+.login-card button {
+  width: 100%;
+  margin-top: 16px;
+  background: #2563eb;
+  color: white;
+}
+
+.alert-list {
+  display: grid;
+  gap: 12px;
+}
+
+.alert-card {
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(239, 68, 68, 0.14);
+}
+
+@media (max-width: 768px) {
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .header {
+    align-items: flex-start;
+  }
 }
