@@ -5,11 +5,14 @@
     "start": "next start"
   },
   "dependencies": {
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
     "@supabase/supabase-js": "latest",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
     "lucide-react": "latest"
+    
   },
   "devDependencies": {
     "typescript": "latest",
