@@ -280,7 +280,21 @@ return Array.from(unique.values());
   const alertView = alerts
   .filter(matchSearch)
   .filter((r: any) => alertFilter === "ALL" || r.category === alertFilter);
-  const serviceView   = service.filter(matchSearch);
+  const serviceView = service
+  .filter((r) => {
+    const okPlant =
+      plant === "ALL" || String(r.plant) === plant;
+
+    const rowDate = r.tanggal_kedatangan
+      ? String(r.tanggal_kedatangan).slice(0, 10)
+      : "";
+
+    const okDate =
+      dateMode === "ALL" || !dateFilter || rowDate === dateFilter;
+
+    return okPlant && okDate;
+  })
+  .filter(matchSearch);
   const bonanView     = bonan.filter(matchSearch);
   const kapasitasView = kapasitas.filter(matchSearch);
 
