@@ -125,7 +125,12 @@ const [unlocked, setUnlocked] = useState(() => {
   const [dateFilter, setDateFilter] = useState(todayStr);
   const [dateMode, setDateMode] = useState("ALL");
 
-  useEffect(() => { if (unlocked) loadAll(); }, [unlocked]);
+ useEffect(() => {
+  if (unlocked) {
+    localStorage.setItem("wms_auth", "OK");
+    loadAll();
+  }
+}, [unlocked]);
 
   async function loadAll() {
     const [s, sl, b, k, kg, h] = await Promise.all([
@@ -306,67 +311,51 @@ function logout() {
     <div className={`app-shell ${dark ? "dark" : "light"}`}>
 
       {/* ── TOPBAR ── */}
-      <header className="topbar">
-        <span className="topbar-logo">⬡ WMS GDRM</span>
-        <div className="topbar-sep" />
+     <header className="topbar">
+  <span className="topbar-logo">⬡ WMS GDRM</span>
+  <div className="topbar-sep" />
 
-        {/* Plant filter */}
-        <div className="plant-group">
-          {["ALL", "1111", "1112", "1113"].map((p) => (
-            <button key={p} className={`plant-btn${plant === p ? " active" : ""}`} onClick={() => setPlant(p)}>{p}</button>
-          ))}
-        </div>
-
-       <div className="topbar-right">
-
-  <span className="top-date">
-    {nowLabel}
-  </span>
-
-  <div className="search-box">
-    <Search size={14} />
-    <input
-      placeholder="Cari semua data..."
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-    />
+  <div className="plant-group">
+    {["ALL", "1111", "1112", "1113"].map((p) => (
+      <button
+        key={p}
+        className={`plant-btn${plant === p ? " active" : ""}`}
+        onClick={() => setPlant(p)}
+      >
+        {p}
+      </button>
+    ))}
   </div>
 
-  {/* Refresh */}
-  <button
-    className="icon-round"
-    onClick={loadAll}
-    title="Refresh"
-  >
-    <RefreshCcw size={16} />
-  </button>
+  <div className="topbar-right">
+    <span className="top-date">{nowLabel}</span>
 
-  {/* Dark Mode */}
-  <button
-    className="icon-round"
-    onClick={() => setDark(!dark)}
-    title="Toggle Tema"
-  >
-    {dark ? <Sun size={16} /> : <Moon size={16} />}
-  </button>
+    <div className="search-box">
+      <Search size={14} />
+      <input
+        placeholder="Cari semua data..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+    </div>
 
-  {/* Logout */}
-  <button
-    className="icon-round"
-    onClick={logout}
-    title="Logout"
-  >
-    <LogOut size={16} />
-  </button>
+    <button className="icon-round" onClick={loadAll} title="Refresh">
+      <RefreshCcw size={16} />
+    </button>
 
-</div>
+    <button
+      className="icon-round"
+      onClick={() => setDark(!dark)}
+      title="Toggle Tema"
+    >
+      {dark ? <Sun size={16} /> : <Moon size={16} />}
+    </button>
 
-          <button className="icon-round" onClick={() => setDark(!dark)} aria-label="Toggle tema">
-            {dark ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-        </div>
-      </header>
-
+    <button className="icon-round" onClick={logout} title="Logout">
+      <LogOut size={16} />
+    </button>
+  </div>
+</header>
       {/* ── SIDEBAR ── */}
       <aside className="sidebar">
         <p className="sidebar-label">MENU</p>
