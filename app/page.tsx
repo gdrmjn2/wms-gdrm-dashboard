@@ -108,9 +108,11 @@ export default function Home() {
 const [unlocked, setUnlocked] = useState(() => {
   if (typeof window === "undefined") return false;
   return localStorage.getItem("wms_auth") === "OK";
+
 });
   const [dark, setDark] = useState(true);
   const [menu, setMenu] = useState("Stock Ready");
+  const [alertFilter, setAlertFilter] = useState("ALL");
   const [plant, setPlant] = useState("ALL");
   const [search, setSearch] = useState("");
 
@@ -253,11 +255,31 @@ const [unlocked, setUnlocked] = useState(() => {
     });
   });
 
-  return a;
+  const unique = new Map();
+
+a.forEach((x) => {
+  const key = [
+    x.category,
+    x.plant,
+    x.sku,
+    x.batch,
+    x.qty,
+    x.kg,
+    x.value,
+    x.note || "",
+    x.status || ""
+  ].join("_");
+
+  unique.set(key, x);
+});
+
+return Array.from(unique.values());
 }, [stockFiltered, hold, plant]);
   const stockView     = stockFiltered.filter(matchSearch);
   const fifoView      = fifo.filter(matchSearch);
-  const alertView     = alerts.filter(matchSearch);
+  const alertView = alerts
+  .filter(matchSearch)
+  .filter((r: any) => alertFilter === "ALL" || r.category === alertFilter);
   const serviceView   = service.filter(matchSearch);
   const bonanView     = bonan.filter(matchSearch);
   const kapasitasView = kapasitas.filter(matchSearch);
@@ -417,7 +439,14 @@ function logout() {
           <div className="table-scroll">
             {menu === "Stock Ready"   && <StockTable   rows={stockView} />}
             {menu === "FIFO Matrix"   && <FIFOTable    rows={fifoView} />}
-            {menu === "Alert Center"  && <AlertView    rows={alertView} />}
+           {menu === "Alert Center" && (
+  <AlertView
+    rows={alertView}
+    allRows={alerts.filter(matchSearch)}
+    alertFilter={alertFilter}
+    setAlertFilter={setAlertFilter}
+  />
+)}
             {menu === "Kapasitas"     && <KapasitasTable rows={kapasitasView} stock={stockView} />}
             {menu === "Service Level" && <ServiceTable rows={serviceView} />}
             {menu === "Bonan PPIC"    && <BonanTable   rows={bonanView} keluar={keluar} />}
@@ -493,18 +522,40 @@ function FIFOTable({ rows }: any) {
   );
 }
 
-function AlertView({ rows }: any) {
-  const hold    = rows.filter((r: any) => r.category === "HOLD");
-  const aging   = rows.filter((r: any) => r.category === "AGING");
-  const expired = rows.filter((r: any) => r.category === "EXPIRED");
+function AlertView({ rows, allRows, alertFilter, setAlertFilter }: any) {
+  const hold = allRows.filter((r: any) => r.category === "HOLD");
+  const aging = allRows.filter((r: any) => r.category === "AGING");
+  const expired = allRows.filter((r: any) => r.category === "EXPIRED");
+
+  function toggle(cat: string) {
+    setAlertFilter(alertFilter === cat ? "ALL" : cat);
+  }
 
   return (
     <div>
       <div className="alert-summary">
-        <div className="alert-stat hold-stat"><span>{hold.length}</span>HOLD</div>
-        <div className="alert-stat aging-stat"><span>{aging.length}</span>Lifetime &gt;4 Hari</div>
-        <div className="alert-stat expired-stat"><span>{expired.length}</span>Mendekati Expired</div>
+        <button
+          className={`alert-stat hold-stat ${alertFilter === "HOLD" ? "active" : ""}`}
+          onClick={() => toggle("HOLD")}
+        >
+          <span>{hold.length}</span>HOLD
+        </button>
+
+        <button
+          className={`alert-stat aging-stat ${alertFilter === "AGING" ? "active" : ""}`}
+          onClick={() => toggle("AGING")}
+        >
+          <span>{aging.length}</span>Lifetime &gt;4 Hari
+        </button>
+
+        <button
+          className={`alert-stat expired-stat ${alertFilter === "EXPIRED" ? "active" : ""}`}
+          onClick={() => toggle("EXPIRED")}
+        >
+          <span>{expired.length}</span>Mendekati Expired
+        </button>
       </div>
+
       <div className="alert-grid">
         {rows.map((r: any, i: number) => (
           <div className={`alert-card cat-${r.category.toLowerCase()}`} key={i}>
@@ -512,7 +563,7 @@ function AlertView({ rows }: any) {
             <div className="alert-name">{r.rm}</div>
             <div className="alert-detail">{r.sku} · Plant {r.plant} · Batch {r.batch}</div>
             <div className="alert-detail">Qty: {fmt0(r.qty)} zak · {fmt2(r.kg)} kg</div>
-            {r.note   && <div className="alert-note">📋 {r.note}</div>}
+            {r.note && <div className="alert-note">📋 {r.note}</div>}
             {r.status && <div className="alert-detail">Status: {r.status}</div>}
             <div className="alert-value">{r.value} hari</div>
           </div>
@@ -521,7 +572,6 @@ function AlertView({ rows }: any) {
     </div>
   );
 }
-
 function KapasitasTable({ rows, stock }: any) {
   return (
     <Tbl heads={["Lokasi","Kapasitas","Isi","Penggunaan","Batch RM","Status"]}>
