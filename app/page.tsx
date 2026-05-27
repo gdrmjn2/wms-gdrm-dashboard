@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "../lib/supabase";
 import { Moon, Sun, Search, Lock } from "lucide-react";
 
 export default function Home() {
