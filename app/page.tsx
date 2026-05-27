@@ -797,7 +797,9 @@ function ServiceTable({ rows }: any) {
 }
 
 function BonanTable({ rows }: any) {
+
   return (
+
     <Tbl
       heads={[
         "Tanggal",
@@ -815,50 +817,119 @@ function BonanTable({ rows }: any) {
         "Note",
       ]}
     >
+
       {rows.map((r: any, i: number) => {
-        const bonPcs = Number(r.qty_bon_zak || 0);
-        const bonKg = Number(r.qty_bon_kg || 0);
-        const kirimPcs = Number(r.qty_terkirim_pcs || 0);
-        const kirimKg = Number(r.qty_terkirim_kg || 0);
 
-        const persenPcs = bonPcs ? (kirimPcs / bonPcs) * 100 : 0;
-        const persenKg = bonKg ? (kirimKg / bonKg) * 100 : 0;
+        const bonPcs =
+          Number(r.qty_bon_zak || 0);
 
-        const kurangPcs = bonPcs - kirimPcs;
-        const kurangKg = bonKg - kirimKg;
+        const bonKg =
+          Number(r.qty_bon_kg || 0);
+
+        const kirimPcs =
+          Number(r.qty_terkirim_pcs || 0);
+
+        const kirimKg =
+          Number(r.qty_terkirim_kg || 0);
+
+        const persenPcs =
+          bonPcs
+            ? (kirimPcs / bonPcs) * 100
+            : 0;
+
+        const persenKg =
+          bonKg
+            ? (kirimKg / bonKg) * 100
+            : 0;
+
+        const kurangPcs =
+          bonPcs - kirimPcs;
+
+        const kurangKg =
+          bonKg - kirimKg;
 
         return (
+
           <tr key={i}>
-            <td className="muted">{r.tanggal}</td>
-            <td><Badge text={r.plant} variant="blue" /></td>
-            <td className="bold">{r.sku}</td>
-            <td>{r.nama_rm}</td>
-            <td className="num blue">{fmt0(bonPcs)}</td>
-            <td className="num blue">{fmt2(bonKg)}</td>
-            <td className="num green">{fmt0(kirimPcs)}</td>
-            <td className="num green">{fmt2(kirimKg)}</td>
-            <td>{fmt2(persenPcs)}%</td>
-            <td>{fmt2(persenKg)}%</td>
+
+            <td className="muted">
+              {r.tanggal}
+            </td>
+
+            <td>
+              <Badge
+                text={r.plant}
+                variant="blue"
+              />
+            </td>
+
+            <td className="bold">
+              {r.sku}
+            </td>
+
+            <td>
+              {r.nama_rm}
+            </td>
+
+            <td className="num blue">
+              {fmt0(bonPcs)}
+            </td>
+
+            <td className="num blue">
+              {fmt2(bonKg)}
+            </td>
+
+            <td className="num green">
+              {fmt0(kirimPcs)}
+            </td>
+
+            <td className="num green">
+              {fmt2(kirimKg)}
+            </td>
+
+            <td className="num">
+              {fmt2(persenPcs)}%
+            </td>
+
+            <td className="num">
+              {fmt2(persenKg)}%
+            </td>
+
             <td>
               <Badge
                 text={fmt0(kurangPcs)}
-                variant={kurangPcs > 0 ? "kurang" : "aman"}
+                variant={
+                  kurangPcs > 0
+                    ? "danger"
+                    : "success"
+                }
               />
             </td>
+
             <td>
               <Badge
                 text={fmt2(kurangKg)}
-                variant={kurangKg > 0 ? "kurang" : "aman"}
+                variant={
+                  kurangKg > 0
+                    ? "danger"
+                    : "success"
+                }
               />
             </td>
-            <td className="muted">{r.note}</td>
+
+            <td className="muted">
+              {r.note || "-"}
+            </td>
+
           </tr>
+
         );
       })}
+
     </Tbl>
+
   );
 }
-
 function StokJalurTable({ bonan, stock, keluar }: any) {
   return (
     <Tbl heads={["SKU","Nama RM","Bonan","Stock Ready","Keluar","Status"]}>
