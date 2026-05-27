@@ -344,15 +344,6 @@ function logout() {
             <div style={{ flex: 1 }} />
 
             <div className="panel-actions">
-
-  <button
-    className="action-btn"
-    onClick={loadAll}
-  >
-    <RefreshCcw size={14} />
-    Refresh
-  </button>
-
   <button
     className="action-btn primary"
     onClick={downloadCurrentDataPDF}
