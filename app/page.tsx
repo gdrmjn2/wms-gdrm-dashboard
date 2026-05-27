@@ -70,14 +70,17 @@ const [dateMode, setDateMode] = useState("TODAY");
 
   const stockFiltered = stock.filter((r) => {
   const okPlant = plant === "ALL" || String(r.plant) === plant;
-  const okSearch = JSON.stringify(r).toLowerCase().includes(search.toLowerCase());
+
+  const okSearch =
+    !search ||
+    JSON.stringify(r).toLowerCase().includes(search.toLowerCase());
 
   const rowDate = r.tanggal_kedatangan
     ? String(r.tanggal_kedatangan).slice(0, 10)
     : "";
 
   const okDate =
-    dateMode === "ALL" || !dateFilter || rowDate === dateFilter;
+    dateMode === "ALL" || rowDate === dateFilter;
 
   return okPlant && okSearch && okDate;
 });
