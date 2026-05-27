@@ -284,7 +284,7 @@ const [unlocked, setUnlocked] = useState(() => {
       th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}
       th{background:#111;color:white}
     </style></head><body>
-      <h2>WMS GDRM - ${menu}</h2>
+      <h2>GDRM LEVEL UP - ${menu}</h2>
       <p>Plant: ${plant} | Mode: ${dateMode} | Tanggal: ${dateFilter}</p>
       <table><thead><tr>${keys.map((k) => `<th>${k}</th>`).join("")}</tr></thead>
       <tbody>${data.map((row) => `<tr>${keys.map((k) => `<td>${row[k] ?? ""}</td>`).join("")}</tr>`).join("")}</tbody>
