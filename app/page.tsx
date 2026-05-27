@@ -1,8 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 import { Moon, Sun, Search, Lock } from "lucide-react";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+);
 
 export default function Home() {
   const [pin, setPin] = useState("");
@@ -24,8 +29,10 @@ export default function Home() {
   async function loadData() {
     let q = supabase.from("stock_live").select("*").order("sku_rm");
     if (plant !== "ALL") q = q.eq("plant", plant);
+
     const { data } = await q;
     const rows = data || [];
+
     setStock(rows);
     buildFifo(rows);
     buildAlerts(rows);
@@ -104,26 +111,22 @@ export default function Home() {
 
   if (!unlocked) {
     return (
-      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
-        <div className="w-full max-w-sm rounded-3xl bg-slate-900 p-8 shadow-2xl text-center">
-          <Lock className="mx-auto mb-4" size={42} />
-          <h1 className="text-2xl font-bold mb-2">WMS GDRM</h1>
-          <p className="text-slate-400 mb-6">Masukkan PIN</p>
-
+      <main className="screen dark">
+        <div className="login-card">
+          <Lock size={42} />
+          <h1>WMS GDRM</h1>
+          <p>Masukkan PIN</p>
           <input
             type="password"
             value={pin}
             onChange={(e) => setPin(e.target.value)}
-            className="w-full text-center text-3xl tracking-widest rounded-2xl bg-slate-800 p-4 outline-none"
             placeholder="••••"
           />
-
           <button
             onClick={() => {
               if (pin === correctPin) setUnlocked(true);
               else alert("PIN salah");
             }}
-            className="mt-6 w-full rounded-2xl bg-blue-600 py-4 font-bold"
           >
             Masuk
           </button>
@@ -132,59 +135,52 @@ export default function Home() {
     );
   }
 
-  const theme = dark
-    ? "bg-slate-950 text-white"
-    : "bg-slate-100 text-slate-900";
-
-  const card = dark ? "bg-slate-900" : "bg-white";
+  const mode = dark ? "dark" : "light";
 
   const filteredStock = stock.filter((r) =>
     JSON.stringify(r).toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <main className={`min-h-screen ${theme} p-4 md:p-6`}>
-      <div className="max-w-7xl mx-auto space-y-5">
-        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <main className={`screen ${mode}`}>
+      <div className="wrap">
+        <header className="header">
           <div>
-            <h1 className="text-3xl font-black">WMS GDRM Dashboard</h1>
-            <p className="opacity-60">Stock, FIFO, Alert, Bonan, Kapasitas</p>
+            <h1>WMS GDRM Dashboard</h1>
+            <p>Stock, FIFO, Alert, Bonan, Kapasitas</p>
           </div>
 
-          <button
-            onClick={() => setDark(!dark)}
-            className={`rounded-2xl p-3 ${card}`}
-          >
+          <button className="icon-btn" onClick={() => setDark(!dark)}>
             {dark ? <Sun /> : <Moon />}
           </button>
         </header>
 
-        <section className="flex gap-2 overflow-x-auto">
+        <section className="plants">
           {["ALL", "1111", "1112", "1113"].map((p) => (
             <button
               key={p}
               onClick={() => setPlant(p)}
-              className={`px-5 py-3 rounded-2xl ${
-                plant === p ? "bg-blue-600 text-white" : card
-              }`}
+              className={plant === p ? "active" : ""}
             >
               {p}
             </button>
           ))}
         </section>
 
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card title="Batch Ready" value={stock.length} card={card} />
+        <section className="cards">
+          <Card title="Batch Ready" value={stock.length} />
           <Card
             title="Total Zak"
-            value={stock.reduce((a, b) => a + Number(b.tot_qty_kemasan || 0), 0)}
-            card={card}
+            value={stock.reduce(
+              (a, b) => a + Number(b.tot_qty_kemasan || 0),
+              0
+            )}
           />
-          <Card title="FIFO RM" value={fifo.length} card={card} />
-          <Card title="Alert" value={alerts.length} card={card} />
+          <Card title="FIFO RM" value={fifo.length} />
+          <Card title="Alert" value={alerts.length} />
         </section>
 
-        <nav className="flex gap-2 overflow-x-auto">
+        <nav className="menu">
           {[
             ["stock", "Stock Ready"],
             ["fifo", "FIFO Matrix"],
@@ -194,20 +190,17 @@ export default function Home() {
             <button
               key={id}
               onClick={() => setMenu(id)}
-              className={`px-4 py-3 rounded-2xl whitespace-nowrap ${
-                menu === id ? "bg-blue-600 text-white" : card
-              }`}
+              className={menu === id ? "active" : ""}
             >
               {label}
             </button>
           ))}
         </nav>
 
-        <div className={`rounded-3xl ${card} p-4`}>
-          <div className="flex items-center gap-2 mb-4">
+        <section className="panel">
+          <div className="search">
             <Search size={18} />
             <input
-              className="w-full bg-transparent outline-none"
               placeholder="Search SKU, nama RM, batch, lokasi..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -218,27 +211,27 @@ export default function Home() {
           {menu === "fifo" && <FifoTable rows={fifo} />}
           {menu === "alert" && <AlertTable rows={alerts} />}
           {menu === "kapasitas" && <Kapasitas />}
-        </div>
+        </section>
       </div>
     </main>
   );
 }
 
-function Card({ title, value, card }: any) {
+function Card({ title, value }: any) {
   return (
-    <div className={`rounded-3xl ${card} p-5 shadow`}>
-      <div className="opacity-60 text-sm">{title}</div>
-      <div className="text-2xl font-black mt-2">{value}</div>
+    <div className="card">
+      <div className="card-title">{title}</div>
+      <div className="card-value">{value}</div>
     </div>
   );
 }
 
 function StockTable({ rows }: any) {
   return (
-    <div className="overflow-auto">
-      <table className="w-full text-sm">
+    <div className="table-wrap">
+      <table>
         <thead>
-          <tr className="opacity-60 text-left">
+          <tr>
             <th>Plant</th>
             <th>SKU RM</th>
             <th>Nama RM</th>
@@ -250,7 +243,7 @@ function StockTable({ rows }: any) {
         </thead>
         <tbody>
           {rows.map((r: any) => (
-            <tr key={r.sku_qr} className="border-t border-slate-700/30">
+            <tr key={r.sku_qr}>
               <td>{r.plant}</td>
               <td>{r.sku_rm}</td>
               <td>{r.nama_rm}</td>
@@ -268,10 +261,10 @@ function StockTable({ rows }: any) {
 
 function FifoTable({ rows }: any) {
   return (
-    <div className="overflow-auto">
-      <table className="w-full text-sm">
+    <div className="table-wrap">
+      <table>
         <thead>
-          <tr className="opacity-60 text-left">
+          <tr>
             <th>SKU RM</th>
             <th>Nama RM</th>
             <th>FIFO 1</th>
@@ -281,13 +274,15 @@ function FifoTable({ rows }: any) {
         </thead>
         <tbody>
           {rows.map((r: any) => (
-            <tr key={r.sku_rm} className="border-t border-slate-700/30">
+            <tr key={r.sku_rm}>
               <td>{r.sku_rm}</td>
               <td>{r.nama_rm}</td>
               {[0, 1, 2].map((i) => (
                 <td key={i}>
                   {r.fifo[i]
-                    ? `${r.fifo[i].no_batch || "-"} / ${r.fifo[i].tot_qty_kemasan || 0} zak`
+                    ? `${r.fifo[i].no_batch || "-"} / ${
+                        r.fifo[i].tot_qty_kemasan || 0
+                      } zak`
                     : "-"}
                 </td>
               ))}
@@ -301,12 +296,16 @@ function FifoTable({ rows }: any) {
 
 function AlertTable({ rows }: any) {
   return (
-    <div className="space-y-3">
+    <div className="alert-list">
       {rows.map((r: any, i: number) => (
-        <div key={i} className="rounded-2xl bg-red-500/10 p-4">
+        <div key={i} className="alert-card">
           <b>{r.type}</b>
-          <div>{r.sku_rm} - {r.nama_rm}</div>
-          <div>Batch: {r.batch} | Qty: {r.qty} | Nilai: {r.value}</div>
+          <div>
+            {r.sku_rm} - {r.nama_rm}
+          </div>
+          <div>
+            Batch: {r.batch} | Qty: {r.qty} | Nilai: {r.value}
+          </div>
         </div>
       ))}
     </div>
@@ -314,5 +313,5 @@ function AlertTable({ rows }: any) {
 }
 
 function Kapasitas() {
-  return <div>Menu kapasitas detail kita aktifkan setelah fetch tabel kapasitas.</div>;
+  return <div>Menu kapasitas detail aktif setelah fetch tabel kapasitas.</div>;
 }
