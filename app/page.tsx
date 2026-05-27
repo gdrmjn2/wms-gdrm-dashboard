@@ -133,12 +133,45 @@ export default function Home() {
           ))}
         </div>
 
-        <section className="cards">
-          <Card title="Batch Ready" value={stockFiltered.length} />
-          <Card title="Total Zak" value={stockFiltered.reduce((a, b) => a + Number(b.tot_qty_kemasan || 0), 0)} />
-          <Card title="FIFO RM" value={fifo.length} />
-          <Card title="Alert" value={alerts.length} />
-        </section>
+        <section className="toolbar">
+  <input
+    type="date"
+    onChange={(e) => {
+      const d = e.target.value;
+      if (!d) return;
+      alert("Filter tanggal dipilih: " + d);
+    }}
+  />
+
+  <button onClick={() => window.print()}>
+    Download PDF
+  </button>
+
+  <button
+    onClick={() =>
+      alert("Telegram nanti kita sambungkan setelah bot token siap")
+    }
+  >
+    Send Telegram
+  </button>
+</section>
+
+       <section className="cards">
+  <Card title="Batch Ready" value={stockFiltered.length} />
+  <Card
+    title="Total Kemasan"
+    value={stockFiltered
+      .reduce((a, b) => a + Number(b.tot_qty_kemasan || 0), 0)
+      .toLocaleString("id-ID")}
+  />
+  <Card
+    title="Total KG"
+    value={stockFiltered
+      .reduce((a, b) => a + Number(b.tot_qty_kg || 0), 0)
+      .toLocaleString("id-ID")}
+  />
+  <Card title="Alert" value={alerts.length} />
+</section>
 
         <nav className="menu">
           {MENUS.map((m) => <button key={m} className={menu === m ? "active" : ""} onClick={() => setMenu(m)}>{m}</button>)}
