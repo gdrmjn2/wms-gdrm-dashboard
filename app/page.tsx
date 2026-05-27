@@ -19,6 +19,14 @@ const MENUS = [
   "Alert Center",
 ];
 
+const fmt0 = (n: any) =>
+  Math.round(Number(n || 0)).toLocaleString("id-ID");
+
+const fmt2 = (n: any) =>
+  Number(n || 0).toLocaleString("id-ID", {
+    maximumFractionDigits: 2,
+  });
+
 export default function Home() {
   const [pin, setPin] = useState("");
   const [unlocked, setUnlocked] = useState(false);
@@ -157,27 +165,42 @@ export default function Home() {
 </section>
 
        <section className="cards">
-  <Card title="Batch Ready" value={stockFiltered.length} />
+  <Card title="Batch Ready" value={fmt0(stockFiltered.length)} />
   <Card
     title="Total Kemasan"
-    value={stockFiltered
-      .reduce((a, b) => a + Number(b.tot_qty_kemasan || 0), 0)
-      .toLocaleString("id-ID")}
+    value={fmt0(
+      stockFiltered.reduce(
+        (a, b) => a + Number(b.tot_qty_kemasan || 0),
+        0
+      )
+    )}
   />
   <Card
     title="Total KG"
-    value={stockFiltered
-      .reduce((a, b) => a + Number(b.tot_qty_kg || 0), 0)
-      .toLocaleString("id-ID")}
+    value={fmt2(
+      stockFiltered.reduce(
+        (a, b) => a + Number(b.tot_qty_kg || 0),
+        0
+      )
+    )}
   />
-  <Card title="Alert" value={alerts.length} />
+  <Card title="Alert" value={fmt0(alerts.length)} />
 </section>
-
+        
         <nav className="menu">
           {MENUS.map((m) => <button key={m} className={menu === m ? "active" : ""} onClick={() => setMenu(m)}>{m}</button>)}
         </nav>
 
         <section className="panel">
+          <div className="panel-top">
+  <input type="date" />
+  <div className="panel-actions">
+    <button onClick={() => window.print()}>Download PDF</button>
+    <button onClick={() => alert("Telegram nanti disambungkan")}>
+      Send Telegram
+    </button>
+  </div>
+</div>
           <div className="search">
             <Search size={18} />
             <input placeholder="Search semua data..." value={search} onChange={(e) => setSearch(e.target.value)} />
