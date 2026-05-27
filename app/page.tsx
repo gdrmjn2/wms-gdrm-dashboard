@@ -117,6 +117,9 @@ const [unlocked, setUnlocked] = useState(() => {
   const [plant, setPlant] = useState("ALL");
   const [search, setSearch] = useState("");
 
+  const [masuk, setMasuk] = useState<any[]>([]);
+  const [jalurVariant, setJalurVariant] = useState("ALL");
+  
   const [stock, setStock] = useState<any[]>([]);
   const [service, setService] = useState<any[]>([]);
   const [bonan, setBonan] = useState<any[]>([]);
@@ -132,6 +135,7 @@ const [unlocked, setUnlocked] = useState(() => {
   if (unlocked) {
     localStorage.setItem("wms_auth", "OK");
     loadAll();
+    supabase.from("transaksi_masuk").select("*").limit(10000)
   }
 }, [unlocked]);
 
