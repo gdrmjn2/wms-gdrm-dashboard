@@ -135,27 +135,28 @@ const [unlocked, setUnlocked] = useState(() => {
   if (unlocked) {
     localStorage.setItem("wms_auth", "OK");
     loadAll();
-    supabase.from("transaksi_masuk").select("*").limit(10000)
   }
 }, [unlocked]);
+  
+ async function loadAll() {
+  const [s, sl, b, k, kg, h, m] = await Promise.all([
+    supabase.from("stock_live").select("*").limit(10000),
+    supabase.from("master_kedatangan").select("*").limit(3000),
+    supabase.from("bonan_ppic").select("*").limit(3000),
+    supabase.from("transaksi_keluar").select("*").limit(10000),
+    supabase.from("kapasitas_gudang").select("*").limit(1000),
+    supabase.from("transaksi_hold").select("*").limit(3000),
+    supabase.from("transaksi_masuk").select("*").limit(10000),
+  ]);
 
-  async function loadAll() {
-    const [s, sl, b, k, kg, h] = await Promise.all([
-      supabase.from("stock_live").select("*").limit(10000),
-      supabase.from("master_kedatangan").select("*").limit(3000),
-      supabase.from("bonan_ppic").select("*").limit(3000),
-      supabase.from("transaksi_keluar").select("*").limit(5000),
-      supabase.from("kapasitas_gudang").select("*").limit(1000),
-      supabase.from("transaksi_hold").select("*").limit(3000),
-    ]);
-    setStock(s.data || []);
-    setService(sl.data || []);
-    setBonan(b.data || []);
-    setKeluar(k.data || []);
-    setKapasitas(kg.data || []);
-    setHold(h.data || []);
-  }
-
+  setStock(s.data || []);
+  setService(sl.data || []);
+  setBonan(b.data || []);
+  setKeluar(k.data || []);
+  setKapasitas(kg.data || []);
+  setHold(h.data || []);
+  setMasuk(m.data || []);
+}
   function matchSearch(row: any) {
     return !search || JSON.stringify(row).toLowerCase().includes(search.toLowerCase());
   }
@@ -303,6 +304,103 @@ return Array.from(unique.values());
   const bonanView     = bonan.filter(matchSearch);
   const kapasitasView = kapasitas.filter(matchSearch);
 
+  function getSkuVariant(row: any) {
+  const skuQr = String(row.sku_qr || "");
+  const parts = skuQr.split("x");
+
+  if (parts.length >= 4) {
+    return parts.slice(3).join("x") || "TANPA VARIAN";
+  }
+
+  return "TANPA VARIAN";
+}
+
+const jalurVariants = Array.from(
+  new Set(
+    masuk
+      .filter((r: any) => {
+        const okPlant = plant === "ALL" || String(r.plant) === plant;
+        return okPlant;
+      })
+      .map((r: any) => getSkuVariant(r))
+  )
+);
+
+const stokJalurView = useMemo(() => {
+  const masukFiltered = masuk.filter((r: any) => {
+    const okPlant = plant === "ALL" || String(r.plant) === plant;
+
+    const rowDate = r.tanggal_kedatangan
+      ? String(r.tanggal_kedatangan).slice(0, 10)
+      : "";
+
+    const okDate =
+      dateMode === "ALL" || !dateFilter || rowDate === dateFilter;
+
+    const okVariant =
+      jalurVariant === "ALL" || getSkuVariant(r) === jalurVariant;
+
+    return okPlant && okDate && okVariant;
+  });
+
+  const group: any = {};
+
+  masukFiltered.forEach((r: any) => {
+    const key = String(r.sku_qr || "");
+
+    if (!key) return;
+
+    if (!group[key]) {
+      group[key] = {
+        sku_qr: key,
+        plant: r.plant,
+        sku_rm: r.sku_rm,
+        nama_rm: r.nama_rm,
+        merk: r.merk,
+        no_batch: r.no_batch,
+        tanggal_kedatangan: r.tanggal_kedatangan,
+        tanggal_expired: r.tanggal_expired,
+        lokasi_rm: r.lokasi_rm,
+        variant: getSkuVariant(r),
+        masuk_pcs: 0,
+        masuk_kg: 0,
+        keluar_pcs: 0,
+        keluar_kg: 0,
+        detail_keluar: [],
+      };
+    }
+
+    group[key].masuk_pcs += Number(r.qty_kemasan || 0);
+    group[key].masuk_kg += Number(r.qty_kg || 0);
+  });
+
+  keluar.forEach((r: any) => {
+    const key = String(r.sku_qr || "");
+
+    if (!key || !group[key]) return;
+
+    group[key].keluar_pcs += Number(r.qty_kemasan || 0);
+    group[key].keluar_kg += Number(r.qty_kg || 0);
+
+    group[key].detail_keluar.push({
+      tanggal: r.tanggal,
+      jam: r.jam,
+      plant_tujuan: r.plant_tujuan,
+      no_palet: r.no_palet,
+      qty_kemasan: r.qty_kemasan,
+      qty_kg: r.qty_kg,
+    });
+  });
+
+  return Object.values(group)
+    .map((r: any) => ({
+      ...r,
+      sisa_pcs: Number(r.masuk_pcs || 0) - Number(r.keluar_pcs || 0),
+      sisa_kg: Number(r.masuk_kg || 0) - Number(r.keluar_kg || 0),
+    }))
+    .filter(matchSearch);
+}, [masuk, keluar, plant, dateMode, dateFilter, jalurVariant, search]);
+  
   function getCurrentData() {
     if (menu === "Stock Ready")   return stockView;
     if (menu === "FIFO Matrix")   return fifoView;
@@ -310,7 +408,7 @@ return Array.from(unique.values());
     if (menu === "Service Level") return serviceView;
     if (menu === "Bonan PPIC")    return bonanView;
     if (menu === "Kapasitas")     return kapasitasView;
-    if (menu === "Stok Jalur")    return bonanView;
+    if (menu === "Stok Jalur")    return stokJalurView;
     return [];
   }
 
@@ -593,7 +691,14 @@ function logout() {
             {menu === "Kapasitas"     && <KapasitasTable rows={kapasitasView} stock={stockView} />}
             {menu === "Service Level" && <ServiceTable rows={serviceView} />}
             {menu === "Bonan PPIC"    && <BonanTable   rows={bonanView} keluar={keluar} />}
-            {menu === "Stok Jalur"    && <StokJalurTable bonan={bonanView} stock={stockView} keluar={keluar} />}
+            {menu === "Stok Jalur" && (
+  <StokJalurTable
+    rows={stokJalurView}
+    variants={jalurVariants}
+    jalurVariant={jalurVariant}
+    setJalurVariant={setJalurVariant}
+  />
+)}
           </div>
         </div>
       </main>
@@ -895,23 +1000,94 @@ function BonanTable({ rows }: any) {
 
   );
 }
-function StokJalurTable({ bonan, stock, keluar }: any) {
+function StokJalurTable({ rows, variants, jalurVariant, setJalurVariant }: any) {
   return (
-    <Tbl heads={["SKU","Nama RM","Bonan","Stock Ready","Keluar","Status"]}>
-      {bonan.map((r: any, i: number) => {
-        const st  = stock.filter((s: any) => String(s.sku_rm) === String(r.sku)).reduce((a: number, b: any) => a + Number(b.tot_qty_kemasan || 0), 0);
-        const out = keluar.filter((k: any) => String(k.sku_rm) === String(r.sku)).reduce((a: number, b: any) => a + Number(b.qty_kemasan || 0), 0);
-        return (
+    <div>
+      <div style={{ padding: "10px 14px", display: "flex", gap: 8, alignItems: "center" }}>
+        <span className="muted sm">Varian SKU QR:</span>
+
+        <button
+          className={`date-btn${jalurVariant === "ALL" ? " active" : ""}`}
+          onClick={() => setJalurVariant("ALL")}
+        >
+          ALL
+        </button>
+
+        {variants.map((v: string) => (
+          <button
+            key={v}
+            className={`date-btn${jalurVariant === v ? " active" : ""}`}
+            onClick={() => setJalurVariant(v)}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+
+      <Tbl
+        heads={[
+          "Plant",
+          "SKU RM",
+          "Nama RM",
+          "Merk / Varian",
+          "SKU QR",
+          "Batch",
+          "Masuk PCS",
+          "Keluar PCS",
+          "Sisa PCS",
+          "Masuk KG",
+          "Keluar KG",
+          "Sisa KG",
+          "Detail Keluar",
+          "Lokasi",
+        ]}
+      >
+        {rows.map((r: any, i: number) => (
           <tr key={i}>
-            <td className="bold">{r.sku}</td>
+            <td><Badge text={r.plant} variant="blue" /></td>
+            <td className="bold">{r.sku_rm}</td>
             <td>{r.nama_rm}</td>
-            <td className="num blue">{fmt0(r.qty_bon_zak)}</td>
-            <td className="num green">{fmt0(st)}</td>
-            <td className="muted">{fmt0(out)}</td>
-            <td><Badge text={st >= Number(r.qty_bon_zak || 0) ? "AMAN" : "KURANG"} variant={st >= Number(r.qty_bon_zak || 0) ? "aman" : "kurang"} /></td>
+            <td className="muted sm">
+              {r.merk || "-"}
+              <br />
+              {r.variant}
+            </td>
+            <td className="muted sm">{r.sku_qr}</td>
+            <td>{r.no_batch}</td>
+
+            <td className="num blue">{fmt0(r.masuk_pcs)}</td>
+            <td className="num">{fmt0(r.keluar_pcs)}</td>
+            <td>
+              <Badge
+                text={fmt0(r.sisa_pcs)}
+                variant={r.sisa_pcs > 0 ? "aman" : "kurang"}
+              />
+            </td>
+
+            <td className="num blue">{fmt2(r.masuk_kg)}</td>
+            <td className="num">{fmt2(r.keluar_kg)}</td>
+            <td>
+              <Badge
+                text={fmt2(r.sisa_kg)}
+                variant={r.sisa_kg > 0 ? "aman" : "kurang"}
+              />
+            </td>
+
+            <td className="muted sm">
+              {r.detail_keluar.length
+                ? r.detail_keluar
+                    .map(
+                      (d: any) =>
+                        `${d.tanggal || "-"} ${d.jam || ""} → ${d.plant_tujuan || "-"} | ${fmt0(d.qty_kemasan)} pcs | ${fmt2(d.qty_kg)} kg`
+                    )
+                    .join("\n")
+                : "-"}
+            </td>
+
+            <td className="muted">{r.lokasi_rm}</td>
           </tr>
-        );
-      })}
-    </Tbl>
+        ))}
+      </Tbl>
+    </div>
   );
 }
