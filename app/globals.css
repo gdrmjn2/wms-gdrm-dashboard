@@ -637,3 +637,14 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
   .plant-group { display: none; }
   .top-date { display: none; }
 }
+
+.alert-stat{
+  border:0;
+  cursor:pointer;
+  text-align:left;
+}
+
+.alert-stat.active{
+  outline:2px solid var(--gold);
+  box-shadow:0 0 0 4px var(--gold-dim);
+}
