@@ -1,195 +1,202 @@
-* {
-  box-sizing: border-box;
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Arial,sans-serif}
+
+.screen{min-height:100vh;padding:22px}
+.dark{
+  background:radial-gradient(circle at top left,#3b2f12,#050505 38%,#000);
+  color:#fff
+}
+.light{
+  background:linear-gradient(135deg,#f8fafc,#e0f2fe,#fff7ed);
+  color:#111827
 }
 
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
+.wrap{
+  max-width:1500px;
+  margin:auto;
+  display:grid;
+  grid-template-columns:260px 1fr;
+  grid-template-areas:
+    "header header"
+    "plants plants"
+    "menu cards"
+    "menu panel";
+  gap:18px
 }
 
-.screen {
-  min-height: 100vh;
-  padding: 20px;
+.header{
+  grid-area:header;
+  display:flex;
+  justify-content:space-between;
+  align-items:center
+}
+.header h1{
+  font-size:36px;
+  margin:0;
+  font-weight:900;
+  letter-spacing:-1px
+}
+.header p{opacity:.7}
+
+.icon-btn,button{
+  border:0;
+  cursor:pointer;
+  border-radius:18px;
+  padding:13px 17px;
+  font-weight:800
 }
 
-.dark {
-  background: #020617;
-  color: white;
+.dark button,.dark .card,.dark .panel,.dark .login-card{
+  background:linear-gradient(145deg,#111827,#050505);
+  color:#fff;
+  border:1px solid rgba(234,179,8,.28);
+  box-shadow:0 0 30px rgba(234,179,8,.08)
+}
+.light button,.light .card,.light .panel,.light .login-card{
+  background:rgba(255,255,255,.78);
+  color:#111827;
+  border:1px solid rgba(15,23,42,.08);
+  box-shadow:0 20px 50px rgba(15,23,42,.08);
+  backdrop-filter:blur(12px)
 }
 
-.light {
-  background: #f1f5f9;
-  color: #0f172a;
+button.active{
+  background:linear-gradient(135deg,#facc15,#b45309)!important;
+  color:#111!important
 }
 
-.wrap {
-  max-width: 1280px;
-  margin: auto;
+.plants{
+  grid-area:plants;
+  display:flex;
+  gap:10px;
+  overflow:auto
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: center;
-  margin-bottom: 18px;
+.menu{
+  grid-area:menu;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  position:sticky;
+  top:20px;
+  height:max-content
+}
+.menu button{
+  text-align:left;
+  padding:18px;
+  border-radius:22px
 }
 
-.header h1 {
-  margin: 0;
-  font-size: 30px;
+.cards{
+  grid-area:cards;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px
+}
+.card{
+  border-radius:30px;
+  padding:24px;
+  min-height:120px
+}
+.card-title{opacity:.68;font-size:14px}
+.card-value{
+  font-size:34px;
+  font-weight:950;
+  margin-top:12px;
+  color:#facc15
+}
+.light .card-value{color:#2563eb}
+
+.panel{
+  grid-area:panel;
+  border-radius:34px;
+  padding:22px;
+  min-height:500px
 }
 
-.header p {
-  opacity: 0.65;
+.search{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  padding:12px 16px;
+  border-radius:20px;
+  margin-bottom:18px;
+  border:1px solid rgba(148,163,184,.25)
+}
+.search input,.login-card input{
+  width:100%;
+  background:transparent;
+  color:inherit;
+  border:0;
+  outline:none;
+  font-size:15px
 }
 
-.icon-btn,
-button {
-  border: 0;
-  border-radius: 16px;
-  padding: 12px 16px;
-  cursor: pointer;
-  font-weight: 700;
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;opacity:.65}
+td,th{
+  padding:14px;
+  border-bottom:1px solid rgba(148,163,184,.22)
+}
+tr:hover{background:rgba(250,204,21,.08)}
+
+.login-card{
+  width:100%;
+  max-width:380px;
+  margin:18vh auto;
+  border-radius:34px;
+  padding:34px;
+  text-align:center
+}
+.login-card input{
+  text-align:center;
+  font-size:32px;
+  letter-spacing:10px;
+  padding:15px;
+  border:1px solid rgba(148,163,184,.3);
+  border-radius:18px
+}
+.login-card button{
+  width:100%;
+  margin-top:18px;
+  background:linear-gradient(135deg,#facc15,#b45309)!important;
+  color:#111!important
 }
 
-.dark button,
-.dark .card,
-.dark .panel,
-.dark .login-card {
-  background: #0f172a;
-  color: white;
+.alert-list{display:grid;gap:14px}
+.alert-card{
+  border-radius:22px;
+  padding:18px;
+  background:linear-gradient(135deg,rgba(239,68,68,.22),rgba(250,204,21,.12));
+  border:1px solid rgba(239,68,68,.35)
 }
 
-.light button,
-.light .card,
-.light .panel,
-.light .login-card {
-  background: white;
-  color: #0f172a;
-}
-
-button.active,
-.plants button.active,
-.menu button.active {
-  background: #2563eb;
-  color: white;
-}
-
-.plants,
-.menu {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  margin-bottom: 18px;
-}
-
-.cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-bottom: 18px;
-}
-
-.card {
-  border-radius: 24px;
-  padding: 20px;
-}
-
-.card-title {
-  opacity: 0.65;
-  font-size: 14px;
-}
-
-.card-value {
-  font-size: 28px;
-  font-weight: 900;
-  margin-top: 8px;
-}
-
-.panel {
-  border-radius: 24px;
-  padding: 18px;
-}
-
-.search {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.search input,
-.login-card input {
-  width: 100%;
-  padding: 14px;
-  border-radius: 14px;
-  border: 1px solid #334155;
-  background: transparent;
-  color: inherit;
-  outline: none;
-}
-
-.table-wrap {
-  overflow: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-th {
-  text-align: left;
-  opacity: 0.7;
-}
-
-td,
-th {
-  padding: 12px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
-}
-
-.login-card {
-  width: 100%;
-  max-width: 360px;
-  margin: 20vh auto;
-  border-radius: 28px;
-  padding: 30px;
-  text-align: center;
-}
-
-.login-card input {
-  text-align: center;
-  font-size: 28px;
-  letter-spacing: 8px;
-}
-
-.login-card button {
-  width: 100%;
-  margin-top: 16px;
-  background: #2563eb;
-  color: white;
-}
-
-.alert-list {
-  display: grid;
-  gap: 12px;
-}
-
-.alert-card {
-  border-radius: 16px;
-  padding: 16px;
-  background: rgba(239, 68, 68, 0.14);
-}
-
-@media (max-width: 768px) {
-  .cards {
-    grid-template-columns: repeat(2, 1fr);
+@media(max-width:900px){
+  .screen{padding:14px}
+  .wrap{
+    display:block;
+    padding-bottom:90px
   }
-
-  .header {
-    align-items: flex-start;
+  .header h1{font-size:26px}
+  .plants,.cards,.panel{margin-bottom:16px}
+  .cards{grid-template-columns:repeat(2,1fr)}
+  .menu{
+    position:fixed;
+    left:10px;
+    right:10px;
+    bottom:10px;
+    z-index:50;
+    flex-direction:row;
+    overflow:auto;
+    padding:10px;
+    border-radius:26px;
+    background:rgba(2,6,23,.9);
+    backdrop-filter:blur(14px)
+  }
+  .menu button{
+    white-space:nowrap;
+    padding:13px 16px;
+    border-radius:18px
   }
 }
