@@ -310,7 +310,7 @@ return Array.from(unique.values());
     return [];
   }
 
-  function downloadCurrentDataPDF() {
+function downloadCurrentDataPDF() {
   let title = menu;
   let head: string[] = [];
   let body: any[][] = [];
