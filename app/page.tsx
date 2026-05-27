@@ -321,6 +321,7 @@ function downloadCurrentDataPDF() {
     body = fifoView.map((r: any) => {
       const fifoText = (idx: number) => {
         const f = r.fifo?.[idx];
+
         if (!f) return "-";
 
         return [
