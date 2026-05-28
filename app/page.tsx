@@ -569,7 +569,7 @@ function logout() {
 
       {/* ── TOPBAR ── */}
      <header className="topbar">
-  <span className="topbar-logo">⬡ WMS GDRM</span>
+  <span className="topbar-logo">⬡ GDRM LEVEL UP</span>
   <div className="topbar-sep" />
 
   <div className="plant-group">
