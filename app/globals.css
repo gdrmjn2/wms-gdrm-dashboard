@@ -651,93 +651,73 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
 
 
 /* ══════════════════════════════════
-   STOK JALUR MATRIX
+/* ══════════════════════════════════
+   STOK JALUR COMPACT DETAIL
 ══════════════════════════════════ */
 
-.jalur-wrap{
-  height:100%;
-  display:flex;
-  flex-direction:column;
-  min-height:0;
-}
-
-.jalur-filterbar{
-  display:flex;
-  align-items:flex-end;
-  gap:10px;
-  padding:10px 14px;
-  border-bottom:1px solid var(--border);
-  flex-wrap:wrap;
-  background:var(--surface);
-  flex-shrink:0;
-}
-
-.jalur-filter{
-  display:flex;
-  flex-direction:column;
-  gap:4px;
-}
-
-.jalur-input{
-  height:30px;
-  min-width:180px;
-  padding:5px 9px;
-  border-radius:9px;
-  border:1px solid var(--border);
-  background:var(--surface2);
-  color:var(--text);
-  font-size:12px;
-  outline:none;
-}
-
-.jalur-input:focus{
-  border-color:var(--gold);
-}
-
-.jalur-scroll{
-  flex:1;
-  min-height:0;
-  overflow:auto;
-}
-
-.jalur-matrix{
-  width:max-content;
-  min-width:100%;
+.jalur-compact-table{
+  width:100%;
+  min-width:980px;
   border-collapse:separate;
   border-spacing:0;
 }
 
-.jalur-matrix th,
-.jalur-matrix td{
-  vertical-align:top;
+.jalur-detail-col{
+  min-width:460px;
+  width:auto;
+  white-space:normal !important;
 }
 
-.jalur-sticky{
-  position:sticky;
-  z-index:5;
-  background:var(--surface);
+.jalur-card-row{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding-bottom:4px;
+  max-width:100%;
 }
 
-.jalur-matrix th.jalur-sticky{
-  z-index:9;
-  background:var(--surface2);
+.jalur-day-card.compact{
+  min-width:145px;
+  max-width:145px;
+  min-height:112px;
+  flex:0 0 145px;
 }
 
-.jalur-info-col{
+.jalur-day-date{
+  font-size:11px;
+  font-weight:900;
+  color:var(--gold);
+  margin-bottom:5px;
+}
+
+.jalur-day-sisa.small{
+  font-size:10px;
+  margin-top:2px;
+}
+
+.jalur-day-empty.compact{
+  min-width:145px;
+  max-width:145px;
+  height:112px;
+  flex:0 0 145px;
+}
+
+/* Override matrix lama supaya header tanggal tidak dipakai */
+.jalur-compact-table .jalur-info-col{
   left:0;
   min-width:280px;
   width:280px;
   max-width:280px;
 }
 
-.jalur-awal-col{
+.jalur-compact-table .jalur-awal-col{
   left:280px;
   min-width:145px;
   width:145px;
   max-width:145px;
 }
 
-.jalur-akhir-col{
+.jalur-compact-table .jalur-akhir-col{
   left:425px;
   min-width:145px;
   width:145px;
@@ -745,218 +725,29 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
   box-shadow:10px 0 18px rgba(0,0,0,.12);
 }
 
-.jalur-date-col{
-  min-width:155px;
-  width:155px;
-  text-align:center !important;
-}
-
-.jalur-day-col{
-  min-width:155px;
-  width:155px;
-  padding:7px !important;
-}
-
-.jalur-name{
-  font-size:13px;
-  font-weight:900;
-  margin-bottom:4px;
-  white-space:normal;
-}
-
-.jalur-skuqr{
-  margin-top:5px;
-  word-break:break-all;
-  white-space:normal;
-  opacity:.7;
-}
-
-.jalur-stock{
-  font-weight:900;
-  font-size:12px;
-  padding:5px 8px;
-  border-radius:9px;
-  margin-bottom:6px;
-  white-space:nowrap;
-}
-
-.jalur-stock.blue{
-  background:rgba(96,165,250,.13);
-  color:var(--blue);
-}
-
-.jalur-stock.green{
-  background:rgba(74,222,128,.13);
-  color:var(--green);
-}
-
-.jalur-stock.red{
-  background:rgba(248,113,113,.13);
-  color:var(--red);
-}
-
-.jalur-day-card{
-  width:100%;
-  min-height:86px;
-  border:1px solid var(--border);
-  border-radius:12px;
-  background:var(--surface2);
-  color:var(--text);
-  cursor:pointer;
-  text-align:left;
-  padding:9px;
-  font-size:11px;
-  line-height:1.45;
-  transition:transform .12s, border-color .12s;
-}
-
-.jalur-day-card:hover{
-  transform:translateY(-1px);
-  border-color:var(--gold);
-}
-
-.jalur-day-title{
-  font-size:9px;
-  text-transform:uppercase;
-  letter-spacing:1px;
-  font-weight:900;
-  color:var(--red);
-  margin-bottom:4px;
-}
-
-.jalur-day-sisa{
-  margin-top:6px;
-  font-weight:900;
-  color:var(--green);
-}
-
-.jalur-day-empty{
-  height:86px;
-  border-radius:12px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:var(--muted);
-  background:rgba(148,163,184,.05);
-  border:1px dashed var(--border);
-}
-
-.jalur-modal-backdrop{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.62);
-  z-index:300;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-}
-
-.jalur-modal{
-  width:min(760px, 96vw);
-  max-height:86vh;
-  overflow:auto;
-  background:var(--surface);
-  color:var(--text);
-  border:1px solid var(--border);
-  border-radius:20px;
-  box-shadow:0 30px 90px rgba(0,0,0,.38);
-}
-
-.jalur-modal-head{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:16px;
-  padding:18px 20px;
-  border-bottom:1px solid var(--border);
-}
-
-.jalur-modal-head h3{
-  font-size:18px;
-  margin-bottom:4px;
-}
-
-.jalur-modal-head p{
-  font-size:12px;
-  color:var(--muted);
-}
-
-.jalur-modal-summary{
-  display:grid;
-  grid-template-columns:repeat(3, 1fr);
-  gap:10px;
-  padding:14px 20px;
-  border-bottom:1px solid var(--border);
-}
-
-.jalur-modal-summary div{
-  background:var(--surface2);
-  border:1px solid var(--border);
-  border-radius:13px;
-  padding:10px;
-}
-
-.jalur-modal-summary span{
-  display:block;
-  font-size:10px;
-  color:var(--muted);
-  text-transform:uppercase;
-  letter-spacing:.7px;
-  margin-bottom:5px;
-}
-
-.jalur-modal-summary b{
-  font-size:13px;
-}
-
-.jalur-timeline-list{
-  padding:16px 20px 20px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-
-.jalur-timeline-item{
-  background:var(--surface2);
-  border:1px solid var(--border);
-  border-left:3px solid var(--gold);
-  border-radius:14px;
-  padding:12px;
-  font-size:12px;
-  line-height:1.55;
-}
-
-.timeline-time{
-  font-weight:900;
-  margin-bottom:5px;
-}
-
-.timeline-sisa{
-  margin-top:6px;
-  color:var(--green);
-  font-weight:900;
-}
-
 @media (max-width: 900px){
-  .jalur-modal-summary{
-    grid-template-columns:1fr;
+  .jalur-compact-table{
+    min-width:860px;
   }
 
-  .jalur-info-col{
+  .jalur-detail-col{
+    min-width:360px;
+  }
+
+  .jalur-compact-table .jalur-info-col{
     min-width:230px;
     width:230px;
     max-width:230px;
   }
 
-  .jalur-awal-col{
+  .jalur-compact-table .jalur-awal-col{
     left:230px;
     min-width:120px;
     width:120px;
     max-width:120px;
   }
 
-  .jalur-akhir-col{
+  .jalur-compact-table .jalur-akhir-col{
     left:350px;
     min-width:120px;
     width:120px;
