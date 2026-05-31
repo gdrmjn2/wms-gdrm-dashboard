@@ -1,6 +1,7 @@
 "use client";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Sun, Moon, Search, FileDown, Send, Package, ArrowUpDown, Warehouse, TrendingUp, ClipboardList, Route, Bell, RefreshCcw, LogOut } from "lucide-react";
@@ -533,6 +534,492 @@ const jalurDates = useMemo(() => {
     return [];
   }
 
+  function safeSheetName(name: any, used: Set<string>) {
+  let base = String(name || "SHEET")
+    .replace(/[\\/?*[\]:]/g, "")
+    .slice(0, 28);
+
+  if (!base) base = "SHEET";
+
+  let finalName = base;
+  let i = 2;
+
+  while (used.has(finalName)) {
+    finalName = `${base.slice(0, 25)}_${i}`;
+    i++;
+  }
+
+  used.add(finalName);
+  return finalName;
+}
+
+function makeDateKey(v: any) {
+  if (!v) return "TANPA TANGGAL";
+  return String(v).slice(0, 10);
+}
+
+function getMerkJalur(row: any) {
+  const merk = String(row.merk || "").trim();
+
+  if (merk && merk !== "-") return merk;
+
+  const skuQr = String(row.sku_qr || "");
+  const parts = skuQr.split("x");
+
+  if (parts.length >= 4) {
+    return parts.slice(3).join("x") || "-";
+  }
+
+  return "-";
+}
+
+function buildJalurBySku(skuRm: any) {
+  const sku = String(skuRm || "");
+
+  const masukRows = masuk.filter(
+    (r: any) => String(r.sku_rm || "") === sku
+  );
+
+  const keluarBySkuQr: any = {};
+
+  keluar.forEach((r: any) => {
+    const key = String(r.sku_qr || "").trim();
+
+    if (!key) return;
+
+    if (!keluarBySkuQr[key]) {
+      keluarBySkuQr[key] = [];
+    }
+
+    keluarBySkuQr[key].push({
+      tanggal: r.tanggal,
+      jam: r.jam,
+      plant_tujuan: r.plant_tujuan,
+      no_palet: r.no_palet,
+      qty_kemasan: Number(r.qty_kemasan || 0),
+      qty_kg: Number(r.qty_kg || 0),
+    });
+  });
+
+  const group: any = {};
+
+  masukRows.forEach((r: any) => {
+    const key = String(r.sku_qr || "").trim();
+
+    if (!key) return;
+
+    if (!group[key]) {
+      group[key] = {
+        plant: r.plant,
+        sku_rm: r.sku_rm,
+        nama_rm: r.nama_rm,
+        merk: getMerkJalur(r),
+        no_batch: r.no_batch || "-",
+        sku_qr: key,
+        lokasi_rm: r.lokasi_rm || "-",
+        masuk_pcs: 0,
+        masuk_kg: 0,
+        keluar_pcs: 0,
+        keluar_kg: 0,
+        sisa_pcs: 0,
+        sisa_kg: 0,
+        daily: {},
+      };
+    }
+
+    group[key].masuk_pcs += Number(r.qty_kemasan || 0);
+    group[key].masuk_kg += Number(r.qty_kg || 0);
+  });
+
+  Object.values(group).forEach((item: any) => {
+    const details = [...(keluarBySkuQr[item.sku_qr] || [])].sort(
+      (a: any, b: any) => {
+        const da = new Date(`${a.tanggal || ""} ${a.jam || ""}`).getTime();
+        const db = new Date(`${b.tanggal || ""} ${b.jam || ""}`).getTime();
+
+        return da - db;
+      }
+    );
+
+    let runningPcs = Number(item.masuk_pcs || 0);
+    let runningKg = Number(item.masuk_kg || 0);
+
+    details.forEach((d: any) => {
+      runningPcs -= Number(d.qty_kemasan || 0);
+      runningKg -= Number(d.qty_kg || 0);
+
+      const day = makeDateKey(d.tanggal);
+
+      if (!item.daily[day]) {
+        item.daily[day] = {
+          date: day,
+          keluar_pcs: 0,
+          keluar_kg: 0,
+          sisa_pcs: runningPcs,
+          sisa_kg: runningKg,
+          details: [],
+        };
+      }
+
+      item.daily[day].keluar_pcs += Number(d.qty_kemasan || 0);
+      item.daily[day].keluar_kg += Number(d.qty_kg || 0);
+      item.daily[day].sisa_pcs = runningPcs;
+      item.daily[day].sisa_kg = runningKg;
+
+      item.daily[day].details.push({
+        ...d,
+        sisa_after_pcs: runningPcs,
+        sisa_after_kg: runningKg,
+      });
+    });
+
+    item.keluar_pcs = Number(item.masuk_pcs || 0) - runningPcs;
+    item.keluar_kg = Number(item.masuk_kg || 0) - runningKg;
+    item.sisa_pcs = runningPcs;
+    item.sisa_kg = runningKg;
+  });
+
+  return Object.values(group);
+}
+
+function downloadBonanExcelPerPlant() {
+  const sourceBonan =
+    plant === "ALL"
+      ? bonanView
+      : bonanView.filter((r: any) => String(r.plant) === plant);
+
+  if (!sourceBonan.length) {
+    alert("Data Bonan PPIC kosong untuk plant/filter ini.");
+    return;
+  }
+
+  const plants =
+    plant === "ALL"
+      ? Array.from(new Set(sourceBonan.map((r: any) => String(r.plant || "NO_PLANT"))))
+      : [plant];
+
+  plants.forEach((plantCode: any) => {
+    const rowsPlant = sourceBonan.filter(
+      (r: any) => String(r.plant || "NO_PLANT") === String(plantCode)
+    );
+
+    if (!rowsPlant.length) return;
+
+    const wb = XLSX.utils.book_new();
+    const usedSheetNames = new Set<string>();
+
+    const skuMap = new Map<string, any>();
+
+    rowsPlant.forEach((r: any) => {
+      const sku = String(r.sku || "").trim();
+
+      if (!sku) return;
+
+      if (!skuMap.has(sku)) {
+        skuMap.set(sku, {
+          sku,
+          nama_rm: r.nama_rm || "",
+          plant: r.plant || "",
+          bon_pcs: 0,
+          bon_kg: 0,
+          terkirim_pcs: 0,
+          terkirim_kg: 0,
+          note: "",
+        });
+      }
+
+      const item = skuMap.get(sku);
+
+      item.bon_pcs += Number(r.qty_bon_zak || 0);
+      item.bon_kg += Number(r.qty_bon_kg || 0);
+      item.terkirim_pcs += Number(r.qty_terkirim_pcs || 0);
+      item.terkirim_kg += Number(r.qty_terkirim_kg || 0);
+
+      if (r.note) item.note = r.note;
+    });
+
+    const summary: any[][] = [
+      [
+        "Plant",
+        "SKU RM",
+        "Nama RM",
+        "Bon PCS",
+        "Bon KG",
+        "Terkirim PCS",
+        "Terkirim KG",
+        "Stock Akhir PCS",
+        "Stock Akhir KG",
+        "Kurang PCS",
+        "Kurang KG",
+        "Status",
+        "Note",
+      ],
+    ];
+
+    skuMap.forEach((item: any) => {
+      const jalurRows = buildJalurBySku(item.sku);
+
+      const stockAkhirPcs = jalurRows.reduce(
+        (a: number, b: any) => a + Number(b.sisa_pcs || 0),
+        0
+      );
+
+      const stockAkhirKg = jalurRows.reduce(
+        (a: number, b: any) => a + Number(b.sisa_kg || 0),
+        0
+      );
+
+      const kurangPcs = Number(item.bon_pcs || 0) - stockAkhirPcs;
+      const kurangKg = Number(item.bon_kg || 0) - stockAkhirKg;
+
+      const status =
+        !jalurRows.length
+          ? "TIDAK ADA STOK JALUR"
+          : kurangPcs > 0 || kurangKg > 0
+          ? "KURANG"
+          : "AMAN";
+
+      summary.push([
+        plantCode,
+        item.sku,
+        item.nama_rm,
+        item.bon_pcs,
+        item.bon_kg,
+        item.terkirim_pcs,
+        item.terkirim_kg,
+        stockAkhirPcs,
+        stockAkhirKg,
+        kurangPcs,
+        kurangKg,
+        status,
+        item.note || "",
+      ]);
+    });
+
+    const wsSummary = XLSX.utils.aoa_to_sheet(summary);
+    wsSummary["!cols"] = [
+      { wch: 10 },
+      { wch: 16 },
+      { wch: 34 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 20 },
+      { wch: 30 },
+    ];
+
+    XLSX.utils.book_append_sheet(
+      wb,
+      wsSummary,
+      safeSheetName("SUMMARY", usedSheetNames)
+    );
+
+    skuMap.forEach((item: any) => {
+      const aoa: any[][] = [];
+
+      aoa.push(["PLANT", plantCode]);
+      aoa.push(["SKU RM", item.sku]);
+      aoa.push(["NAMA RM", item.nama_rm]);
+      aoa.push(["BON PCS", item.bon_pcs]);
+      aoa.push(["BON KG", item.bon_kg]);
+      aoa.push(["TERKIRIM PCS", item.terkirim_pcs]);
+      aoa.push(["TERKIRIM KG", item.terkirim_kg]);
+      aoa.push([]);
+
+      const jalurRows = buildJalurBySku(item.sku);
+
+      if (!jalurRows.length) {
+        aoa.push(["TIDAK ADA STOK JALUR UNTUK SKU INI"]);
+      }
+
+      jalurRows.forEach((j: any, idx: number) => {
+        aoa.push([`JALUR ${idx + 1}`]);
+        aoa.push(["Plant", j.plant]);
+        aoa.push(["Merk / Varian", j.merk]);
+        aoa.push(["Batch", j.no_batch]);
+        aoa.push(["SKU QR", j.sku_qr]);
+        aoa.push(["Lokasi", j.lokasi_rm]);
+        aoa.push(["Stock Awal PCS", j.masuk_pcs]);
+        aoa.push(["Stock Awal KG", j.masuk_kg]);
+        aoa.push(["Stock Akhir PCS", j.sisa_pcs]);
+        aoa.push(["Stock Akhir KG", j.sisa_kg]);
+        aoa.push([]);
+
+        aoa.push([
+          "Tanggal",
+          "Keluar PCS",
+          "Keluar KG",
+          "Sisa PCS",
+          "Sisa KG",
+        ]);
+
+        const days = Object.values(j.daily || {}).sort((a: any, b: any) =>
+          String(a.date).localeCompare(String(b.date))
+        );
+
+        if (!days.length) {
+          aoa.push(["Belum ada pengeluaran", 0, 0, j.sisa_pcs, j.sisa_kg]);
+        } else {
+          days.forEach((d: any) => {
+            aoa.push([
+              d.date,
+              d.keluar_pcs,
+              d.keluar_kg,
+              d.sisa_pcs,
+              d.sisa_kg,
+            ]);
+          });
+        }
+
+        aoa.push([]);
+        aoa.push(["DETAIL TIMELINE"]);
+        aoa.push([
+          "Tanggal",
+          "Jam",
+          "Tujuan",
+          "No Palet",
+          "Qty PCS",
+          "Qty KG",
+          "Sisa Setelah PCS",
+          "Sisa Setelah KG",
+        ]);
+
+        days.forEach((d: any) => {
+          d.details.forEach((x: any) => {
+            aoa.push([
+              x.tanggal || "",
+              x.jam || "",
+              x.plant_tujuan || "",
+              x.no_palet || "",
+              x.qty_kemasan || 0,
+              x.qty_kg || 0,
+              x.sisa_after_pcs || 0,
+              x.sisa_after_kg || 0,
+            ]);
+          });
+        });
+
+        aoa.push([]);
+        aoa.push([]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+      ws["!cols"] = [
+        { wch: 18 },
+        { wch: 26 },
+        { wch: 16 },
+        { wch: 16 },
+        { wch: 16 },
+        { wch: 16 },
+        { wch: 18 },
+        { wch: 18 },
+      ];
+
+      XLSX.utils.book_append_sheet(
+        wb,
+        ws,
+        safeSheetName(item.sku, usedSheetNames)
+      );
+    });
+
+    const dateName = new Date().toISOString().slice(0, 10);
+
+    XLSX.writeFile(
+      wb,
+      `BONAN_PPIC_${plantCode}_${dateName}.xlsx`
+    );
+  });
+}
+
+function downloadStokJalurExcel() {
+  if (!stokJalurView.length) {
+    alert("Data Stok Jalur kosong.");
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  const rows: any[][] = [
+    [
+      "Plant",
+      "SKU RM",
+      "Nama RM",
+      "Merk",
+      "Batch",
+      "SKU QR",
+      "Lokasi",
+      "Stock Awal PCS",
+      "Stock Awal KG",
+      "Stock Akhir PCS",
+      "Stock Akhir KG",
+      "Detail Jalur"
+    ],
+  ];
+
+  stokJalurView.forEach((r: any) => {
+    const days = Object.values(r.daily || {}).sort((a: any, b: any) =>
+      String(a.date).localeCompare(String(b.date))
+    );
+
+    const detail = days.length
+      ? days
+          .map((day: any) =>
+            [
+              `${day.date}`,
+              `Keluar: ${fmt0(day.keluar_pcs)} pcs | ${fmt2(day.keluar_kg)} kg`,
+              `Sisa: ${fmt0(day.sisa_pcs)} pcs | ${fmt2(day.sisa_kg)} kg`
+            ].join("\n")
+          )
+          .join("\n\n")
+      : "Belum ada keluar";
+
+    rows.push([
+      r.plant,
+      r.sku_rm,
+      r.nama_rm,
+      r.merk,
+      r.no_batch,
+      r.sku_qr,
+      r.lokasi_rm,
+      Number(r.masuk_pcs || 0),
+      Number(r.masuk_kg || 0),
+      Number(r.sisa_pcs || 0),
+      Number(r.sisa_kg || 0),
+      detail
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  ws["!cols"] = [
+    { wch: 10 },
+    { wch: 16 },
+    { wch: 34 },
+    { wch: 24 },
+    { wch: 16 },
+    { wch: 45 },
+    { wch: 12 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 45 },
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, "STOK_JALUR");
+
+  const plantName = plant === "ALL" ? "ALL_PLANT" : plant;
+  const dateName = new Date().toISOString().slice(0, 10);
+
+  XLSX.writeFile(wb, `STOK_JALUR_${plantName}_${dateName}.xlsx`);
+}
+  
 function downloadCurrentDataPDF() {
   let title = menu;
   let head: string[] = [];
@@ -600,34 +1087,38 @@ function downloadCurrentDataPDF() {
     "SKU QR",
     "Stock Awal",
     "Stock Akhir",
-    ...jalurDates.map((d: string) => d)
+    "Detail Jalur"
   ];
 
-  body = stokJalurView.map((r: any) => [
-    r.plant,
-    r.sku_rm,
-    r.nama_rm,
-    r.merk,
-    r.no_batch,
-    r.sku_qr,
+  body = stokJalurView.map((r: any) => {
+    const days = Object.values(r.daily || {}).sort((a: any, b: any) =>
+      String(a.date).localeCompare(String(b.date))
+    );
 
-    `${fmt0(r.masuk_pcs)} pcs\n${fmt2(r.masuk_kg)} kg`,
+    const detail = days.length
+      ? days
+          .map((day: any) =>
+            [
+              `${day.date}`,
+              `Keluar: ${fmt0(day.keluar_pcs)} pcs | ${fmt2(day.keluar_kg)} kg`,
+              `Sisa: ${fmt0(day.sisa_pcs)} pcs | ${fmt2(day.sisa_kg)} kg`
+            ].join("\n")
+          )
+          .join("\n\n")
+      : "Belum ada keluar";
 
-    `${fmt0(r.sisa_pcs)} pcs\n${fmt2(r.sisa_kg)} kg`,
-
-    ...jalurDates.map((d: string) => {
-      const day = r.daily?.[d];
-
-      if (!day) return "-";
-
-      return [
-        `Keluar: ${fmt0(day.keluar_pcs)} pcs`,
-        `${fmt2(day.keluar_kg)} kg`,
-        `Sisa: ${fmt0(day.sisa_pcs)} pcs`,
-        `${fmt2(day.sisa_kg)} kg`
-      ].join("\n");
-    })
-  ]);
+    return [
+      r.plant,
+      r.sku_rm,
+      r.nama_rm,
+      r.merk,
+      r.no_batch,
+      r.sku_qr,
+      `${fmt0(r.masuk_pcs)} pcs\n${fmt2(r.masuk_kg)} kg`,
+      `${fmt0(r.sisa_pcs)} pcs\n${fmt2(r.sisa_kg)} kg`,
+      detail
+    ];
+  });
     
   } else if (menu === "Bonan PPIC") {
     head = [
@@ -701,8 +1192,8 @@ function downloadCurrentDataPDF() {
     body,
     startY: 24,
     styles: {
-  fontSize: menu === "Stok Jalur" ? 5.5 : 7,
-  cellPadding: menu === "Stok Jalur" ? 1.2 : 1.8,
+  fontSize: menu === "Stok Jalur" ? 6 : 7,
+  cellPadding: menu === "Stok Jalur" ? 1.5 : 1.8,
   overflow: "linebreak",
   valign: "top",
 },
@@ -827,6 +1318,26 @@ function logout() {
             <div style={{ flex: 1 }} />
 
             <div className="panel-actions">
+  {menu === "Stok Jalur" && (
+    <button
+      className="action-btn primary"
+      onClick={downloadStokJalurExcel}
+    >
+      <FileDown size={14} />
+      Excel
+    </button>
+  )}
+
+  {menu === "Bonan PPIC" && (
+    <button
+      className="action-btn primary"
+      onClick={downloadBonanExcelPerPlant}
+    >
+      <FileDown size={14} />
+      Excel Plant
+    </button>
+  )}
+
   <button
     className="action-btn primary"
     onClick={downloadCurrentDataPDF}
@@ -842,7 +1353,6 @@ function logout() {
     <Send size={14} />
     Telegram
   </button>
-
 </div>
           </div>
 
