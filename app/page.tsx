@@ -736,11 +736,10 @@ function Badge({ text, variant }: { text: string; variant: "aman" | "kurang" | "
 
 function StockTable({ rows }: any) {
   return (
-    <Tbl heads={["Plant","SKU QR","SKU RM","Nama RM","Batch","Qty Kemasan","Total KG","Lokasi"]}>
+    <Tbl heads={["Plant","SKU RM","Nama RM","Batch","Qty Kemasan","Total KG","Lokasi"]}>
       {rows.map((r: any, i: number) => (
         <tr key={i}>
           <td><Badge text={r.plant} variant="blue" /></td>
-          <td className="muted sm">{r.sku_qr}</td>
           <td className="bold">{r.sku_rm}</td>
           <td>{r.nama_rm}</td>
           <td className="muted">{r.no_batch}</td>
