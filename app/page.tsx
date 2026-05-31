@@ -807,6 +807,13 @@ function logout() {
             <span className="panel-title">{menu}</span>
            <span className="panel-count">
   {getCurrentData().length} baris
+  {menu === "Stok Jalur" && (
+    <>
+      {" "} | masuk: {masuk.length}
+      {" "} | keluar: {keluar.length}
+      {" "} | jalur: {stokJalurView.length}
+    </>
+  )}
 </span>
 
             <div className="date-filter">
