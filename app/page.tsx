@@ -119,6 +119,10 @@ const [unlocked, setUnlocked] = useState(() => {
 
   const [masuk, setMasuk] = useState<any[]>([]);
   const [jalurVariant, setJalurVariant] = useState("ALL");
+  const [jalurSku, setJalurSku] = useState("");
+  const [jalurMerk, setJalurMerk] = useState("ALL");
+  const [jalurBatch, setJalurBatch] = useState("");
+  const [jalurDetail, setJalurDetail] = useState<any | null>(null);
   
   const [stock, setStock] = useState<any[]>([]);
   const [service, setService] = useState<any[]>([]);
@@ -316,27 +320,106 @@ return Array.from(unique.values());
   return "TANPA VARIAN";
 }
 
+function dateKey_(v: any) {
+  if (!v) return "TANPA TANGGAL";
+  return String(v).slice(0, 10);
+}
+
+const jalurSkuOptions = Array.from(
+  new Set(
+    masuk
+      .filter((r: any) => plant === "ALL" || String(r.plant) === plant)
+      .map((r: any) => String(r.sku_rm || ""))
+      .filter(Boolean)
+  )
+).sort();
+
+const jalurMerkOptions = Array.from(
+  new Set(
+    masuk
+      .filter((r: any) => {
+        const okPlant = plant === "ALL" || String(r.plant) === plant;
+        const okSku =
+          !jalurSku ||
+          String(r.sku_rm || "")
+            .toLowerCase()
+            .includes(jalurSku.toLowerCase());
+
+        return okPlant && okSku;
+      })
+      .map((r: any) => String(r.merk || "-"))
+      .filter(Boolean)
+  )
+).sort();
+
 const jalurVariants = Array.from(
   new Set(
     masuk
       .filter((r: any) => {
         const okPlant = plant === "ALL" || String(r.plant) === plant;
-        return okPlant;
+
+        const okSku =
+          !jalurSku ||
+          String(r.sku_rm || "")
+            .toLowerCase()
+            .includes(jalurSku.toLowerCase());
+
+        const okMerk =
+          jalurMerk === "ALL" || String(r.merk || "-") === jalurMerk;
+
+        return okPlant && okSku && okMerk;
       })
       .map((r: any) => getSkuVariant(r))
   )
-);
+).sort();
 
 const stokJalurView = useMemo(() => {
-const masukFiltered = masuk.filter((r: any) => {
-  const okPlant =
-    plant === "ALL" || String(r.plant) === plant;
+  const keluarBySkuQr: any = {};
 
-  const okVariant =
-    jalurVariant === "ALL" || getSkuVariant(r) === jalurVariant;
+  keluar.forEach((r: any) => {
+    const key = String(r.sku_qr || "");
 
-  return okPlant && okVariant;
-});
+    if (!key) return;
+
+    if (!keluarBySkuQr[key]) {
+      keluarBySkuQr[key] = [];
+    }
+
+    keluarBySkuQr[key].push({
+      tanggal: r.tanggal,
+      jam: r.jam,
+      plant_tujuan: r.plant_tujuan,
+      no_palet: r.no_palet,
+      qty_kemasan: Number(r.qty_kemasan || 0),
+      qty_kg: Number(r.qty_kg || 0),
+    });
+  });
+
+  const masukFiltered = masuk.filter((r: any) => {
+    const okPlant =
+      plant === "ALL" || String(r.plant) === plant;
+
+    const okSku =
+      !jalurSku ||
+      String(r.sku_rm || "")
+        .toLowerCase()
+        .includes(jalurSku.toLowerCase());
+
+    const okMerk =
+      jalurMerk === "ALL" || String(r.merk || "-") === jalurMerk;
+
+    const okBatch =
+      !jalurBatch ||
+      String(r.no_batch || "")
+        .toLowerCase()
+        .includes(jalurBatch.toLowerCase());
+
+    const okVariant =
+      jalurVariant === "ALL" || getSkuVariant(r) === jalurVariant;
+
+    return okPlant && okSku && okMerk && okBatch && okVariant;
+  });
+
   const group: any = {};
 
   masukFiltered.forEach((r: any) => {
@@ -350,8 +433,8 @@ const masukFiltered = masuk.filter((r: any) => {
         plant: r.plant,
         sku_rm: r.sku_rm,
         nama_rm: r.nama_rm,
-        merk: r.merk,
-        no_batch: r.no_batch,
+        merk: r.merk || "-",
+        no_batch: r.no_batch || "-",
         tanggal_kedatangan: r.tanggal_kedatangan,
         tanggal_expired: r.tanggal_expired,
         lokasi_rm: r.lokasi_rm,
@@ -360,7 +443,9 @@ const masukFiltered = masuk.filter((r: any) => {
         masuk_kg: 0,
         keluar_pcs: 0,
         keluar_kg: 0,
-        detail_keluar: [],
+        sisa_pcs: 0,
+        sisa_kg: 0,
+        daily: {},
       };
     }
 
@@ -368,32 +453,75 @@ const masukFiltered = masuk.filter((r: any) => {
     group[key].masuk_kg += Number(r.qty_kg || 0);
   });
 
-  keluar.forEach((r: any) => {
-    const key = String(r.sku_qr || "");
+  Object.values(group).forEach((item: any) => {
+    const details = [...(keluarBySkuQr[item.sku_qr] || [])].sort(
+      (a: any, b: any) => {
+        const da = new Date(`${a.tanggal || ""} ${a.jam || ""}`).getTime();
+        const db = new Date(`${b.tanggal || ""} ${b.jam || ""}`).getTime();
 
-    if (!key || !group[key]) return;
+        return da - db;
+      }
+    );
 
-    group[key].keluar_pcs += Number(r.qty_kemasan || 0);
-    group[key].keluar_kg += Number(r.qty_kg || 0);
+    let runningPcs = Number(item.masuk_pcs || 0);
+    let runningKg = Number(item.masuk_kg || 0);
 
-    group[key].detail_keluar.push({
-      tanggal: r.tanggal,
-      jam: r.jam,
-      plant_tujuan: r.plant_tujuan,
-      no_palet: r.no_palet,
-      qty_kemasan: r.qty_kemasan,
-      qty_kg: r.qty_kg,
+    details.forEach((d: any) => {
+      runningPcs -= Number(d.qty_kemasan || 0);
+      runningKg -= Number(d.qty_kg || 0);
+
+      const day = dateKey_(d.tanggal);
+
+      if (!item.daily[day]) {
+        item.daily[day] = {
+          date: day,
+          keluar_pcs: 0,
+          keluar_kg: 0,
+          sisa_pcs: runningPcs,
+          sisa_kg: runningKg,
+          details: [],
+        };
+      }
+
+      item.daily[day].keluar_pcs += Number(d.qty_kemasan || 0);
+      item.daily[day].keluar_kg += Number(d.qty_kg || 0);
+      item.daily[day].sisa_pcs = runningPcs;
+      item.daily[day].sisa_kg = runningKg;
+
+      item.daily[day].details.push({
+        ...d,
+        sisa_after_pcs: runningPcs,
+        sisa_after_kg: runningKg,
+      });
     });
+
+    item.keluar_pcs = Number(item.masuk_pcs || 0) - runningPcs;
+    item.keluar_kg = Number(item.masuk_kg || 0) - runningKg;
+    item.sisa_pcs = runningPcs;
+    item.sisa_kg = runningKg;
   });
 
-  return Object.values(group)
-    .map((r: any) => ({
-      ...r,
-      sisa_pcs: Number(r.masuk_pcs || 0) - Number(r.keluar_pcs || 0),
-      sisa_kg: Number(r.masuk_kg || 0) - Number(r.keluar_kg || 0),
-    }))
-    .filter(matchSearch);
-}, [masuk, keluar, plant, dateMode, dateFilter, jalurVariant, search]);
+  return Object.values(group).filter(matchSearch);
+}, [
+  masuk,
+  keluar,
+  plant,
+  jalurSku,
+  jalurMerk,
+  jalurBatch,
+  jalurVariant,
+  search,
+]);
+
+const jalurDates = useMemo(() => {
+  return Array.from(
+    new Set(
+      stokJalurView.flatMap((r: any) =>
+        Object.keys(r.daily || {})
+      )
+    )
+  ).sort();
+}, [stokJalurView]);
   
   function getCurrentData() {
     if (menu === "Stock Ready")   return stockView;
