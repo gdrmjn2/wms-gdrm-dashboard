@@ -759,18 +759,25 @@ function downloadBonanExcelPerPlant() {
     skuMap.forEach((item: any) => {
       const jalurRows = buildJalurBySku(item.sku);
 
-      const stockAkhirPcs = jalurRows.reduce(
-        (a: number, b: any) => a + Number(b.sisa_pcs || 0),
-        0
-      );
+      const stockAkhirPcs: number = Number(
+  jalurRows.reduce(
+    (a: number, b: any) => a + Number(b.sisa_pcs || 0),
+    0
+  )
+);
 
-      const stockAkhirKg = jalurRows.reduce(
-        (a: number, b: any) => a + Number(b.sisa_kg || 0),
-        0
-      );
+const stockAkhirKg: number = Number(
+  jalurRows.reduce(
+    (a: number, b: any) => a + Number(b.sisa_kg || 0),
+    0
+  )
+);
 
-      const kurangPcs = Number(item.bon_pcs || 0) - stockAkhirPcs;
-      const kurangKg = Number(item.bon_kg || 0) - stockAkhirKg;
+const kurangPcs: number =
+  Number(item.bon_pcs || 0) - Number(stockAkhirPcs || 0);
+
+const kurangKg: number =
+  Number(item.bon_kg || 0) - Number(stockAkhirKg || 0);
 
       const status =
         !jalurRows.length
