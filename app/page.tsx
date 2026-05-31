@@ -998,31 +998,202 @@ function AlertView({ rows, allRows, alertFilter, setAlertFilter }: any) {
   );
 }
 function KapasitasTable({ rows, stock }: any) {
+  const [selected, setSelected] = useState<any | null>(null);
+
+  function norm(v: any) {
+    return String(v || "")
+      .trim()
+      .toUpperCase();
+  }
+
+  function stockInLokasi(lokasi: any) {
+    const lok = norm(lokasi);
+
+    return stock.filter((s: any) => {
+      const rmLok = norm(s.lokasi_rm);
+
+      return (
+        rmLok === lok ||
+        rmLok.startsWith(lok + "-") ||
+        rmLok.startsWith(lok + " ") ||
+        rmLok.includes(lok)
+      );
+    });
+  }
+
+  const sortedRows = [...rows].sort((a: any, b: any) =>
+    String(a.lokasi || "").localeCompare(String(b.lokasi || ""), "id", {
+      numeric: true,
+    })
+  );
+
   return (
-    <Tbl heads={["Lokasi","Kapasitas","Isi","Penggunaan","Batch RM","Status"]}>
-      {rows.map((r: any, i: number) => {
-        const isi   = stock.filter((s: any) => String(s.lokasi_rm).includes(r.lokasi));
-        const pct   = parseInt(r.persen) || 0;
-        const color = pct > 80 ? "red" : pct > 60 ? "gold" : "green";
-        return (
-          <tr key={i}>
-            <td className="bold">{r.lokasi}</td>
-            <td>{fmt0(r.kapasitas)}</td>
-            <td>{fmt0(r.isi)}</td>
-            <td>
-              <div className="prog-wrap">
-                <div className="prog-bar">
-                  <div className={`prog-fill prog-${color}`} style={{ width: `${pct}%` }} />
-                </div>
-                <span className="prog-label">{r.persen}</span>
+    <div className="kapasitas-wrap">
+      <div className="kapasitas-map">
+        {sortedRows.map((r: any, i: number) => {
+          const isiStock = stockInLokasi(r.lokasi);
+
+          const totalBatch = isiStock.length;
+
+          const totalKemasan = isiStock.reduce(
+            (a: number, b: any) => a + Number(b.tot_qty_kemasan || 0),
+            0
+          );
+
+          const totalKg = isiStock.reduce(
+            (a: number, b: any) => a + Number(b.tot_qty_kg || 0),
+            0
+          );
+
+          const kapasitas = Number(r.kapasitas || 0);
+          const isi = Number(r.isi || totalKemasan || 0);
+
+          const pct =
+            Number(String(r.persen || "").replace("%", "")) ||
+            (kapasitas ? Math.round((isi / kapasitas) * 100) : 0);
+
+          const status =
+            pct >= 100
+              ? "FULL"
+              : pct >= 80
+              ? "PADAT"
+              : pct >= 60
+              ? "SEDANG"
+              : "AMAN";
+
+          const level =
+            pct >= 100
+              ? "full"
+              : pct >= 80
+              ? "high"
+              : pct >= 60
+              ? "mid"
+              : "low";
+
+          return (
+            <button
+              key={`${r.lokasi}_${i}`}
+              className={`kapasitas-rack rack-${level}`}
+              onClick={() =>
+                setSelected({
+                  lokasi: r.lokasi,
+                  kapasitas,
+                  isi,
+                  persen: pct,
+                  status,
+                  totalBatch,
+                  totalKemasan,
+                  totalKg,
+                  items: isiStock,
+                })
+              }
+            >
+              <div className="rack-top">
+                <span>Lokasi</span>
+                <b>{r.lokasi}</b>
               </div>
-            </td>
-            <td className="num blue">{isi.length} batch</td>
-            <td><Badge text={pct > 80 ? "PENUH" : pct > 60 ? "SEDANG" : "AMAN"} variant={pct > 80 ? "kurang" : pct > 60 ? "hold" : "aman"} /></td>
-          </tr>
-        );
-      })}
-    </Tbl>
+
+              <div className="rack-body">
+                <div className="rack-percent">{pct}%</div>
+                <div className="rack-status">{status}</div>
+              </div>
+
+              <div className="rack-bar">
+                <div
+                  className="rack-fill"
+                  style={{
+                    width: `${Math.min(pct, 100)}%`,
+                  }}
+                />
+              </div>
+
+              <div className="rack-foot">
+                <span>{fmt0(totalBatch)} batch</span>
+                <span>{fmt0(totalKemasan)} pcs</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {selected && (
+        <div
+          className="kapasitas-modal-backdrop"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            className="kapasitas-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="kapasitas-modal-head">
+              <div>
+                <h3>Lokasi {selected.lokasi}</h3>
+                <p>
+                  Status {selected.status} · Penggunaan {selected.persen}%
+                </p>
+              </div>
+
+              <button
+                className="icon-round"
+                onClick={() => setSelected(null)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="kapasitas-summary">
+              <div>
+                <span>Kapasitas</span>
+                <b>{fmt0(selected.kapasitas)}</b>
+              </div>
+
+              <div>
+                <span>Total Batch</span>
+                <b>{fmt0(selected.totalBatch)}</b>
+              </div>
+
+              <div>
+                <span>Total Kemasan</span>
+                <b>{fmt0(selected.totalKemasan)} pcs</b>
+              </div>
+
+              <div>
+                <span>Total KG</span>
+                <b>{fmt2(selected.totalKg)} kg</b>
+              </div>
+            </div>
+
+            <div className="kapasitas-detail-list">
+              {selected.items.length ? (
+                selected.items.map((s: any, i: number) => (
+                  <div className="kapasitas-item" key={i}>
+                    <div className="kap-item-main">
+                      <b>{s.nama_rm}</b>
+                      <span>{s.sku_rm}</span>
+                    </div>
+
+                    <div className="kap-item-meta">
+                      <span>Batch: {s.no_batch || "-"}</span>
+                      <span>Merk: {s.merk || "-"}</span>
+                      <span>SKU QR: {s.sku_qr || "-"}</span>
+                    </div>
+
+                    <div className="kap-item-qty">
+                      <span>{fmt0(s.tot_qty_kemasan)} pcs</span>
+                      <span>{fmt2(s.tot_qty_kg)} kg</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="kapasitas-empty">
+                  Tidak ada RM stock ready di lokasi ini.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
