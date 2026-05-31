@@ -341,20 +341,24 @@ function dateKey_(v: any) {
   return String(v).slice(0, 10);
 }
 
-const jalurSkuOptions = Array.from(
-  new Map(
-    masuk
-      .filter((r: any) => plant === "ALL" || String(r.plant) === plant)
-      .map((r: any) => [
-        String(r.sku_rm || ""),
-        {
-          sku_rm: String(r.sku_rm || ""),
-          nama_rm: String(r.nama_rm || ""),
-        },
-      ])
-      .filter(([sku]: any) => Boolean(sku))
-  ).values()
-).sort((a: any, b: any) =>
+const jalurSkuMap = new Map<string, any>();
+
+masuk
+  .filter((r: any) => plant === "ALL" || String(r.plant) === plant)
+  .forEach((r: any) => {
+    const sku = String(r.sku_rm || "");
+
+    if (!sku) return;
+
+    if (!jalurSkuMap.has(sku)) {
+      jalurSkuMap.set(sku, {
+        sku_rm: sku,
+        nama_rm: String(r.nama_rm || ""),
+      });
+    }
+  });
+
+const jalurSkuOptions = Array.from(jalurSkuMap.values()).sort((a: any, b: any) =>
   String(a.nama_rm || "").localeCompare(String(b.nama_rm || ""))
 );
 
