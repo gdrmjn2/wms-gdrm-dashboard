@@ -1290,3 +1290,330 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
     grid-template-columns:1fr;
   }
 }
+
+
+/* ══════════════════════════════════
+   MOBILE APK MODE — ONLY HP
+   Desktop tidak berubah
+══════════════════════════════════ */
+
+@media (max-width: 900px) {
+
+  html,
+  body {
+    overflow: hidden;
+  }
+
+  .app-shell {
+    height: 100dvh;
+    grid-template-rows: 56px 1fr 64px;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "topbar"
+      "main"
+      "sidebar";
+  }
+
+  /* TOPBAR MOBILE */
+  .topbar {
+    height: 56px;
+    padding: 0 10px;
+    gap: 8px;
+  }
+
+  .topbar-logo {
+    font-size: 13px;
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .topbar-sep,
+  .top-date {
+    display: none;
+  }
+
+  .topbar-right {
+    gap: 6px;
+  }
+
+  .search-box {
+    padding: 6px 8px;
+    border-radius: 12px;
+  }
+
+  .search-box input {
+    width: 105px;
+    font-size: 12px;
+  }
+
+  .icon-round {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+  }
+
+  /* plant chip di mobile tetap muncul, tapi kecil */
+  .plant-group {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    max-width: 160px;
+  }
+
+  .plant-btn {
+    padding: 5px 9px;
+    font-size: 11px;
+    border-radius: 999px;
+    flex: 0 0 auto;
+  }
+
+  /* MAIN MOBILE */
+  .main {
+    padding: 10px;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .metrics {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .metric-card {
+    border-radius: 14px;
+    padding: 10px 12px;
+  }
+
+  .metric-label {
+    font-size: 9px;
+  }
+
+  .metric-value {
+    font-size: 20px;
+  }
+
+  .panel {
+    border-radius: 16px;
+    min-height: 0;
+  }
+
+  .panel-header {
+    padding: 9px 10px;
+    gap: 6px;
+  }
+
+  .panel-title {
+    font-size: 13px;
+  }
+
+  .panel-count {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+
+  .date-filter {
+    width: 100%;
+    overflow-x: auto;
+    padding-top: 4px;
+  }
+
+  .date-btn {
+    flex: 0 0 auto;
+    font-size: 10px;
+    padding: 5px 9px;
+  }
+
+  .date-inp {
+    font-size: 10px;
+    height: 28px;
+  }
+
+  .panel-actions {
+    width: 100%;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+  }
+
+  .action-btn {
+    flex: 0 0 auto;
+    font-size: 11px;
+    padding: 7px 10px;
+    border-radius: 10px;
+  }
+
+  .table-scroll {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* SIDEBAR JADI BOTTOM NAV */
+  .sidebar {
+    grid-area: sidebar;
+    height: 64px;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-right: 0;
+    border-top: 1px solid var(--border);
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .sidebar-label {
+    display: none;
+  }
+
+  .nav-btn {
+    flex: 0 0 auto;
+    min-width: 72px;
+    height: 50px;
+    padding: 6px 8px;
+    border-radius: 14px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    font-size: 9.5px;
+    text-align: center;
+  }
+
+  .nav-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .nav-btn.active {
+    background: var(--gold-dim);
+    color: var(--gold);
+  }
+
+  /* TABLE MOBILE: tetap scroll horizontal, tidak merusak desktop */
+  .data-table {
+    font-size: 11px;
+    min-width: 720px;
+  }
+
+  .data-table th {
+    font-size: 9.5px;
+    padding: 8px 10px;
+  }
+
+  .data-table td {
+    padding: 8px 10px;
+  }
+
+  /* ALERT CENTER MOBILE */
+  .alert-summary {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .alert-grid {
+    grid-template-columns: 1fr;
+    padding: 10px;
+  }
+
+  .alert-card {
+    border-radius: 14px;
+  }
+
+  /* STOK JALUR MOBILE */
+  .jalur-filterbar {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .jalur-filter {
+    width: 100%;
+  }
+
+  .jalur-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .jalur-compact-table {
+    min-width: 900px;
+  }
+
+  .jalur-info-col {
+    min-width: 230px;
+    width: 230px;
+    max-width: 230px;
+  }
+
+  .jalur-awal-col {
+    left: 230px;
+    min-width: 115px;
+    width: 115px;
+    max-width: 115px;
+  }
+
+  .jalur-akhir-col {
+    left: 345px;
+    min-width: 115px;
+    width: 115px;
+    max-width: 115px;
+  }
+
+  .jalur-detail-col {
+    min-width: 380px;
+  }
+
+  .jalur-card-row {
+    max-width: 380px;
+  }
+
+  .jalur-day-card.compact,
+  .jalur-day-empty.compact {
+    width: 135px !important;
+    min-width: 135px !important;
+    max-width: 135px !important;
+    flex: 0 0 135px !important;
+  }
+
+  .jalur-modal {
+    width: 96vw;
+    max-height: 84dvh;
+  }
+
+  .jalur-modal-summary {
+    grid-template-columns: 1fr;
+  }
+
+  /* KAPASITAS MOBILE */
+  .kapasitas-wrap {
+    padding: 10px;
+  }
+
+  .kapasitas-map {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .kapasitas-rack {
+    min-height: 130px;
+    border-radius: 16px;
+    padding: 12px;
+    transform: none;
+  }
+
+  .rack-top b {
+    font-size: 18px;
+  }
+
+  .rack-percent {
+    font-size: 24px;
+  }
+
+  .kapasitas-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .kap-item-meta {
+    grid-template-columns: 1fr;
+  }
+}
