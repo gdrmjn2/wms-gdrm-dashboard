@@ -663,43 +663,58 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
 }
 
 .jalur-detail-col{
-  min-width:460px;
-  width:auto;
-  white-space:normal !important;
+  min-width: 480px;
+  max-width: 780px;
+  white-space: normal !important;
 }
 
 .jalur-card-row{
-  display:flex;
-  gap:8px;
-  overflow-x:auto;
-  padding-bottom:4px;
-  max-width:100%;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 4px 10px;
+  max-width: 100%;
 }
 
-.jalur-day-card.compact{
-  min-width:145px;
-  max-width:145px;
-  min-height:112px;
-  flex:0 0 145px;
+.jalur-day-card.compact div{
+  white-space: nowrap;
 }
+
 
 .jalur-day-date{
-  font-size:11px;
-  font-weight:900;
-  color:var(--gold);
-  margin-bottom:5px;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+.jalur-day-sisa{
+  margin-top: 6px;
+  color: var(--green);
+  font-weight: 900;
 }
 
 .jalur-day-sisa.small{
-  font-size:10px;
-  margin-top:2px;
+  margin-top: 2px;
+  font-size: 10px;
+}
+   
+.jalur-day-title{
+  font-size: 9px;
+  color: var(--red);
+  letter-spacing: 1px;
+  font-weight: 900;
+  margin-bottom: 5px;
 }
 
 .jalur-day-empty.compact{
-  min-width:145px;
-  max-width:145px;
-  height:112px;
-  flex:0 0 145px;
+  width: 145px !important;
+  min-width: 145px !important;
+  max-width: 145px !important;
+  flex: 0 0 145px !important;
+  height: 118px;
 }
 
 /* Override matrix lama supaya header tanggal tidak dipakai */
