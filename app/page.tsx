@@ -119,7 +119,7 @@ const [unlocked, setUnlocked] = useState(() => {
 
   const [masuk, setMasuk] = useState<any[]>([]);
   const [jalurVariant, setJalurVariant] = useState("ALL");
-  const [jalurSku, setJalurSku] = useState("");
+  const [jalurSku, setJalurSku] = useState("ALL");
   const [jalurMerk, setJalurMerk] = useState("ALL");
   const [jalurBatch, setJalurBatch] = useState("");
   const [jalurDetail, setJalurDetail] = useState<any | null>(null);
@@ -309,7 +309,7 @@ return Array.from(unique.values());
   const bonanView     = bonan.filter(matchSearch);
   const kapasitasView = kapasitas.filter(matchSearch);
 
-  function getSkuVariant(row: any) {
+ function getSkuVariant(row: any) {
   const skuQr = String(row.sku_qr || "");
   const parts = skuQr.split("x");
 
@@ -320,58 +320,59 @@ return Array.from(unique.values());
   return "TANPA VARIAN";
 }
 
+function getJalurMerk(row: any) {
+  const merkSheet = String(row.merk || "").trim();
+
+  if (merkSheet && merkSheet !== "-") {
+    return merkSheet;
+  }
+
+  const suffix = getSkuVariant(row);
+
+  if (suffix && suffix !== "TANPA VARIAN") {
+    return suffix;
+  }
+
+  return "-";
+}
+
 function dateKey_(v: any) {
   if (!v) return "TANPA TANGGAL";
   return String(v).slice(0, 10);
 }
 
 const jalurSkuOptions = Array.from(
-  new Set(
+  new Map(
     masuk
       .filter((r: any) => plant === "ALL" || String(r.plant) === plant)
-      .map((r: any) => String(r.sku_rm || ""))
-      .filter(Boolean)
-  )
-).sort();
+      .map((r: any) => [
+        String(r.sku_rm || ""),
+        {
+          sku_rm: String(r.sku_rm || ""),
+          nama_rm: String(r.nama_rm || ""),
+        },
+      ])
+      .filter(([sku]: any) => Boolean(sku))
+  ).values()
+).sort((a: any, b: any) =>
+  String(a.nama_rm || "").localeCompare(String(b.nama_rm || ""))
+);
 
 const jalurMerkOptions = Array.from(
   new Set(
     masuk
       .filter((r: any) => {
         const okPlant = plant === "ALL" || String(r.plant) === plant;
-        const okSku =
-          !jalurSku ||
-          String(r.sku_rm || "")
-            .toLowerCase()
-            .includes(jalurSku.toLowerCase());
+        const okSku = jalurSku === "ALL" || String(r.sku_rm || "") === jalurSku;
 
         return okPlant && okSku;
       })
-      .map((r: any) => String(r.merk || "-"))
-      .filter(Boolean)
+      .map((r: any) => getJalurMerk(r))
+      .filter((m: string) => m && m !== "-")
   )
 ).sort();
 
-const jalurVariants = Array.from(
-  new Set(
-    masuk
-      .filter((r: any) => {
-        const okPlant = plant === "ALL" || String(r.plant) === plant;
-
-        const okSku =
-          !jalurSku ||
-          String(r.sku_rm || "")
-            .toLowerCase()
-            .includes(jalurSku.toLowerCase());
-
-        const okMerk =
-          jalurMerk === "ALL" || String(r.merk || "-") === jalurMerk;
-
-        return okPlant && okSku && okMerk;
-      })
-      .map((r: any) => getSkuVariant(r))
-  )
-).sort();
+const jalurVariants = jalurMerkOptions;
 
 const stokJalurView = useMemo(() => {
   const keluarBySkuQr: any = {};
@@ -400,13 +401,12 @@ const stokJalurView = useMemo(() => {
       plant === "ALL" || String(r.plant) === plant;
 
     const okSku =
-      !jalurSku ||
-      String(r.sku_rm || "")
-        .toLowerCase()
-        .includes(jalurSku.toLowerCase());
+      jalurSku === "ALL" || String(r.sku_rm || "") === jalurSku;
+
+    const merk = getJalurMerk(r);
 
     const okMerk =
-      jalurMerk === "ALL" || String(r.merk || "-") === jalurMerk;
+      jalurMerk === "ALL" || merk === jalurMerk;
 
     const okBatch =
       !jalurBatch ||
@@ -414,10 +414,7 @@ const stokJalurView = useMemo(() => {
         .toLowerCase()
         .includes(jalurBatch.toLowerCase());
 
-    const okVariant =
-      jalurVariant === "ALL" || getSkuVariant(r) === jalurVariant;
-
-    return okPlant && okSku && okMerk && okBatch && okVariant;
+    return okPlant && okSku && okMerk && okBatch;
   });
 
   const group: any = {};
@@ -433,12 +430,11 @@ const stokJalurView = useMemo(() => {
         plant: r.plant,
         sku_rm: r.sku_rm,
         nama_rm: r.nama_rm,
-        merk: r.merk || "-",
+        merk: getJalurMerk(r),
         no_batch: r.no_batch || "-",
         tanggal_kedatangan: r.tanggal_kedatangan,
         tanggal_expired: r.tanggal_expired,
         lokasi_rm: r.lokasi_rm,
-        variant: getSkuVariant(r),
         masuk_pcs: 0,
         masuk_kg: 0,
         keluar_pcs: 0,
@@ -509,7 +505,6 @@ const stokJalurView = useMemo(() => {
   jalurSku,
   jalurMerk,
   jalurBatch,
-  jalurVariant,
   search,
 ]);
 
@@ -591,6 +586,44 @@ function downloadCurrentDataPDF() {
       r.value,
       r.note || r.status || ""
     ]);
+    } else if (menu === "Stok Jalur") {
+  head = [
+    "Plant",
+    "SKU RM",
+    "Nama RM",
+    "Merk",
+    "Batch",
+    "SKU QR",
+    "Stock Awal PCS",
+    "Stock Awal KG",
+    "Stock Akhir PCS",
+    "Stock Akhir KG",
+    ...jalurDates.map((d: string) => `${d} Keluar / Sisa`)
+  ];
+
+  body = stokJalurView.map((r: any) => [
+    r.plant,
+    r.sku_rm,
+    r.nama_rm,
+    r.merk,
+    r.no_batch,
+    r.sku_qr,
+    fmt0(r.masuk_pcs),
+    fmt2(r.masuk_kg),
+    fmt0(r.sisa_pcs),
+    fmt2(r.sisa_kg),
+    ...jalurDates.map((d: string) => {
+      const day = r.daily?.[d];
+
+      if (!day) return "-";
+
+      return [
+        `Keluar: ${fmt0(day.keluar_pcs)} pcs | ${fmt2(day.keluar_kg)} kg`,
+        `Sisa: ${fmt0(day.sisa_pcs)} pcs | ${fmt2(day.sisa_kg)} kg`
+      ].join("\n");
+    })
+  ]);
+    
   } else if (menu === "Bonan PPIC") {
     head = [
       "Tanggal",
@@ -819,9 +852,6 @@ function logout() {
   <StokJalurTable
     rows={stokJalurView}
     dates={jalurDates}
-    variants={jalurVariants}
-    jalurVariant={jalurVariant}
-    setJalurVariant={setJalurVariant}
     jalurSku={jalurSku}
     setJalurSku={setJalurSku}
     jalurMerk={jalurMerk}
@@ -1137,9 +1167,6 @@ function BonanTable({ rows }: any) {
 function StokJalurTable({
   rows,
   dates,
-  variants,
-  jalurVariant,
-  setJalurVariant,
   jalurSku,
   setJalurSku,
   jalurMerk,
@@ -1155,19 +1182,22 @@ function StokJalurTable({
     <div className="jalur-wrap">
       <div className="jalur-filterbar">
         <div className="jalur-filter">
-          <span className="muted sm">SKU RM</span>
-          <input
-            list="jalur-sku-list"
+          <span className="muted sm">Nama RM</span>
+          <select
             className="jalur-input"
-            placeholder="contoh: 1104100030"
             value={jalurSku}
-            onChange={(e) => setJalurSku(e.target.value)}
-          />
-          <datalist id="jalur-sku-list">
-            {skuOptions.map((s: string) => (
-              <option key={s} value={s} />
+            onChange={(e) => {
+              setJalurSku(e.target.value);
+              setJalurMerk("ALL");
+            }}
+          >
+            <option value="ALL">ALL</option>
+            {skuOptions.map((s: any) => (
+              <option key={s.sku_rm} value={s.sku_rm}>
+                {s.nama_rm} — {s.sku_rm}
+              </option>
             ))}
-          </datalist>
+          </select>
         </div>
 
         <div className="jalur-filter">
@@ -1194,28 +1224,6 @@ function StokJalurTable({
             value={jalurBatch}
             onChange={(e) => setJalurBatch(e.target.value)}
           />
-        </div>
-
-        <div className="jalur-filter wide">
-          <span className="muted sm">Varian SKU QR</span>
-          <div className="jalur-variant-list">
-            <button
-              className={`date-btn${jalurVariant === "ALL" ? " active" : ""}`}
-              onClick={() => setJalurVariant("ALL")}
-            >
-              ALL
-            </button>
-
-            {variants.map((v: string) => (
-              <button
-                key={v}
-                className={`date-btn${jalurVariant === v ? " active" : ""}`}
-                onClick={() => setJalurVariant(v)}
-              >
-                {v}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -1282,7 +1290,7 @@ function StokJalurTable({
                           }
                         >
                           <div className="jalur-day-title">
-                            Keluar
+                            Total Keluar
                           </div>
                           <div>
                             {fmt0(day.keluar_pcs)} pcs
