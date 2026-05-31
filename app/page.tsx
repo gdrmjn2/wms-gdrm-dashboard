@@ -598,11 +598,9 @@ function downloadCurrentDataPDF() {
     "Merk",
     "Batch",
     "SKU QR",
-    "Stock Awal PCS",
-    "Stock Awal KG",
-    "Stock Akhir PCS",
-    "Stock Akhir KG",
-    ...jalurDates.map((d: string) => `${d} Keluar / Sisa`)
+    "Stock Awal",
+    "Stock Akhir",
+    ...jalurDates.map((d: string) => d)
   ];
 
   body = stokJalurView.map((r: any) => [
@@ -612,18 +610,21 @@ function downloadCurrentDataPDF() {
     r.merk,
     r.no_batch,
     r.sku_qr,
-    fmt0(r.masuk_pcs),
-    fmt2(r.masuk_kg),
-    fmt0(r.sisa_pcs),
-    fmt2(r.sisa_kg),
+
+    `${fmt0(r.masuk_pcs)} pcs\n${fmt2(r.masuk_kg)} kg`,
+
+    `${fmt0(r.sisa_pcs)} pcs\n${fmt2(r.sisa_kg)} kg`,
+
     ...jalurDates.map((d: string) => {
       const day = r.daily?.[d];
 
       if (!day) return "-";
 
       return [
-        `Keluar: ${fmt0(day.keluar_pcs)} pcs | ${fmt2(day.keluar_kg)} kg`,
-        `Sisa: ${fmt0(day.sisa_pcs)} pcs | ${fmt2(day.sisa_kg)} kg`
+        `Keluar: ${fmt0(day.keluar_pcs)} pcs`,
+        `${fmt2(day.keluar_kg)} kg`,
+        `Sisa: ${fmt0(day.sisa_pcs)} pcs`,
+        `${fmt2(day.sisa_kg)} kg`
       ].join("\n");
     })
   ]);
@@ -700,10 +701,11 @@ function downloadCurrentDataPDF() {
     body,
     startY: 24,
     styles: {
-      fontSize: 7,
-      cellPadding: 1.8,
-      overflow: "linebreak"
-    },
+  fontSize: menu === "Stok Jalur" ? 5.5 : 7,
+  cellPadding: menu === "Stok Jalur" ? 1.2 : 1.8,
+  overflow: "linebreak",
+  valign: "top",
+},
     headStyles: {
       fillColor: [17, 24, 39],
       textColor: [255, 255, 255]
@@ -1177,7 +1179,6 @@ function BonanTable({ rows }: any) {
 }
 function StokJalurTable({
   rows,
-  dates,
   jalurSku,
   setJalurSku,
   jalurMerk,
@@ -1239,88 +1240,101 @@ function StokJalurTable({
       </div>
 
       <div className="jalur-scroll">
-        <table className="data-table jalur-matrix">
+        <table className="data-table jalur-compact-table">
           <thead>
             <tr>
               <th className="jalur-sticky jalur-info-col">Barang</th>
               <th className="jalur-sticky jalur-awal-col">Stock Awal</th>
               <th className="jalur-sticky jalur-akhir-col">Stock Akhir</th>
-
-              {dates.map((d: string) => (
-                <th key={d} className="jalur-date-col">
-                  {d}
-                </th>
-              ))}
+              <th className="jalur-detail-col">Detail Jalur</th>
             </tr>
           </thead>
 
           <tbody>
-            {rows.map((r: any, i: number) => (
-              <tr key={`${r.sku_qr}_${i}`}>
-                <td className="jalur-sticky jalur-info-col">
-                  <div className="jalur-name">{r.nama_rm}</div>
-                  <div className="muted sm">SKU RM: {r.sku_rm}</div>
-                  <div className="muted sm">Merk: {r.merk || "-"}</div>
-                  <div className="muted sm">Batch: {r.no_batch || "-"}</div>
-                  <div className="muted sm">Plant: {r.plant}</div>
-                  <div className="muted sm">Lokasi: {r.lokasi_rm || "-"}</div>
-                  <div className="muted sm jalur-skuqr">{r.sku_qr}</div>
-                </td>
+            {rows.map((r: any, i: number) => {
+              const days = Object.values(r.daily || {}).sort((a: any, b: any) =>
+                String(a.date).localeCompare(String(b.date))
+              );
 
-                <td className="jalur-sticky jalur-awal-col">
-                  <div className="jalur-stock blue">
-                    {fmt0(r.masuk_pcs)} pcs
-                  </div>
-                  <div className="jalur-stock green">
-                    {fmt2(r.masuk_kg)} kg
-                  </div>
-                </td>
+              return (
+                <tr key={`${r.sku_qr}_${i}`}>
+                  <td className="jalur-sticky jalur-info-col">
+                    <div className="jalur-name">{r.nama_rm}</div>
+                    <div className="muted sm">SKU RM: {r.sku_rm}</div>
+                    <div className="muted sm">Merk: {r.merk || "-"}</div>
+                    <div className="muted sm">Batch: {r.no_batch || "-"}</div>
+                    <div className="muted sm">Plant: {r.plant}</div>
+                    <div className="muted sm">Lokasi: {r.lokasi_rm || "-"}</div>
+                    <div className="muted sm jalur-skuqr">{r.sku_qr}</div>
+                  </td>
 
-                <td className="jalur-sticky jalur-akhir-col">
-                  <div className={`jalur-stock ${r.sisa_pcs > 0 ? "green" : "red"}`}>
-                    {fmt0(r.sisa_pcs)} pcs
-                  </div>
-                  <div className={`jalur-stock ${r.sisa_kg > 0 ? "green" : "red"}`}>
-                    {fmt2(r.sisa_kg)} kg
-                  </div>
-                </td>
+                  <td className="jalur-sticky jalur-awal-col">
+                    <div className="jalur-stock blue">
+                      {fmt0(r.masuk_pcs)} pcs
+                    </div>
+                    <div className="jalur-stock green">
+                      {fmt2(r.masuk_kg)} kg
+                    </div>
+                  </td>
 
-                {dates.map((d: string) => {
-                  const day = r.daily?.[d];
+                  <td className="jalur-sticky jalur-akhir-col">
+                    <div className={`jalur-stock ${r.sisa_pcs > 0 ? "green" : "red"}`}>
+                      {fmt0(r.sisa_pcs)} pcs
+                    </div>
+                    <div className={`jalur-stock ${r.sisa_kg > 0 ? "green" : "red"}`}>
+                      {fmt2(r.sisa_kg)} kg
+                    </div>
+                  </td>
 
-                  return (
-                    <td key={d} className="jalur-day-col">
-                      {day ? (
-                        <button
-                          className="jalur-day-card"
-                          onClick={() =>
-                            setJalurDetail({
-                              row: r,
-                              day,
-                            })
-                          }
-                        >
-                          <div className="jalur-day-title">
-                            Total Keluar
-                          </div>
-                          <div>
-                            {fmt0(day.keluar_pcs)} pcs
-                          </div>
-                          <div>
-                            {fmt2(day.keluar_kg)} kg
-                          </div>
-                          <div className="jalur-day-sisa">
-                            Sisa {fmt0(day.sisa_pcs)} pcs
-                          </div>
-                        </button>
+                  <td className="jalur-detail-col">
+                    <div className="jalur-card-row">
+                      {days.length ? (
+                        days.map((day: any) => (
+                          <button
+                            key={day.date}
+                            className="jalur-day-card compact"
+                            onClick={() =>
+                              setJalurDetail({
+                                row: r,
+                                day,
+                              })
+                            }
+                          >
+                            <div className="jalur-day-date">
+                              {day.date}
+                            </div>
+
+                            <div className="jalur-day-title">
+                              Total Keluar
+                            </div>
+
+                            <div>
+                              {fmt0(day.keluar_pcs)} pcs
+                            </div>
+
+                            <div>
+                              {fmt2(day.keluar_kg)} kg
+                            </div>
+
+                            <div className="jalur-day-sisa">
+                              Sisa {fmt0(day.sisa_pcs)} pcs
+                            </div>
+
+                            <div className="jalur-day-sisa small">
+                              {fmt2(day.sisa_kg)} kg
+                            </div>
+                          </button>
+                        ))
                       ) : (
-                        <div className="jalur-day-empty">-</div>
+                        <div className="jalur-day-empty compact">
+                          Belum ada keluar
+                        </div>
                       )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
