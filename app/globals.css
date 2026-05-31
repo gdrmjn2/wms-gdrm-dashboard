@@ -46,7 +46,6 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
    PIN SCREEN
 ══════════════════════════════════ */
 
-/* Animated canvas lives behind the card */
 #bg-canvas {
   position: absolute;
   inset: 0;
@@ -105,7 +104,6 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
   margin-bottom: 28px;
 }
 
-/* Dots */
 .pin-dots {
   display: flex;
   justify-content: center;
@@ -137,7 +135,6 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
   75%       { transform: translateX(7px); }
 }
 
-/* Keypad */
 .pin-pad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -182,7 +179,6 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
   text-transform: uppercase;
 }
 
-/* Error message */
 .pin-error {
   font-size: 13px;
   color: #f87171;
@@ -497,7 +493,6 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
 }
 .data-table tr:hover td { background: rgba(255, 255, 255, 0.025); }
 
-/* cell helpers */
 .data-table td.bold  { font-weight: 700; }
 .data-table td.muted { color: var(--muted); }
 .data-table td.sm    { font-size: 11px; }
@@ -520,7 +515,6 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
 .badge-pending { background: rgba(192, 132, 252, 0.15); color: #c084fc; }
 .badge-blue    { background: rgba(96, 165, 250, 0.13);  color: #60a5fa; }
 
-/* light mode badge text */
 .light .badge-aman    { color: #16a34a; }
 .light .badge-kurang  { color: #dc2626; }
 .light .badge-hold    { color: #d97706; }
@@ -609,33 +603,6 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
   .table-scroll { overflow: visible; height: auto; }
   body { background: #fff !important; color: #000 !important; }
   .data-table th { background: #eee; color: #000; }
-}
-
-/* ══════════════════════════════════
-   MOBILE (≤900 px)
-══════════════════════════════════ */
-@media (max-width: 900px) {
-  .app-shell {
-    grid-template-rows: 52px 1fr 60px;
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "topbar"
-      "main"
-      "sidebar";
-  }
-  .sidebar {
-    flex-direction: row;
-    overflow-x: auto;
-    padding: 6px 10px;
-    border-right: 0;
-    border-top: 1px solid var(--border);
-  }
-  .sidebar-label { display: none; }
-  .nav-btn { white-space: nowrap; flex-direction: column; gap: 3px; font-size: 10px; padding: 6px 10px; border-radius: 10px; }
-  .metrics { grid-template-columns: repeat(2, 1fr); }
-  .alert-grid, .alert-summary { grid-template-columns: 1fr; }
-  .plant-group { display: none; }
-  .top-date { display: none; }
 }
 
 .alert-stat{
@@ -972,40 +939,6 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
   font-weight:900;
 }
 
-@media (max-width: 900px){
-  .jalur-compact-table{
-    min-width:920px;
-  }
-
-  .jalur-info-col{
-    min-width:230px;
-    width:230px;
-    max-width:230px;
-  }
-
-  .jalur-awal-col{
-    left:230px;
-    min-width:120px;
-    width:120px;
-    max-width:120px;
-  }
-
-  .jalur-akhir-col{
-    left:350px;
-    min-width:120px;
-    width:120px;
-    max-width:120px;
-  }
-
-  .jalur-card-row{
-    max-width:420px;
-  }
-
-  .jalur-modal-summary{
-    grid-template-columns:1fr;
-  }
-}
-
 /* ══════════════════════════════════
    KAPASITAS GUDANG — 2.5D MAP
 ══════════════════════════════════ */
@@ -1281,55 +1214,48 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
   text-align:center;
 }
 
-@media (max-width:900px){
-  .kapasitas-summary{
-    grid-template-columns:repeat(2, 1fr);
-  }
 
-  .kap-item-meta{
-    grid-template-columns:1fr;
-  }
-}
-
-
-/* ══════════════════════════════════
-   MOBILE APK MODE — ONLY HP
-   Desktop tidak berubah
-══════════════════════════════════ */
-
+/* ══════════════════════════════════════════════════
+   MOBILE (≤ 900px) — PERBAIKAN TOTAL
+   Desktop sama sekali tidak berubah di atas sini.
+══════════════════════════════════════════════════ */
 @media (max-width: 900px) {
 
-  html,
-  body {
+  /* ── Base ── */
+  html, body {
     overflow: hidden;
   }
 
+  /* ── App shell: topbar | main | bottom-nav ── */
   .app-shell {
     height: 100dvh;
-    grid-template-rows: 56px 1fr 64px;
+    grid-template-rows: 52px 1fr 62px;
     grid-template-columns: 1fr;
     grid-template-areas:
       "topbar"
       "main"
       "sidebar";
+    overflow: hidden;
   }
 
-  /* TOPBAR MOBILE */
+  /* ════════════════════════
+     TOPBAR MOBILE
+  ════════════════════════ */
   .topbar {
-    height: 56px;
-    padding: 0 10px;
+    height: 52px;
+    padding: 0 12px;
     gap: 8px;
   }
 
   .topbar-logo {
     font-size: 13px;
-    max-width: 130px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    letter-spacing: 0;
   }
 
+  /* Sembunyikan elemen topbar yang tidak perlu di HP */
   .topbar-sep,
-  .top-date {
+  .top-date,
+  .plant-group {
     display: none;
   }
 
@@ -1337,70 +1263,69 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
     gap: 6px;
   }
 
+  /* Search box lebih compact */
   .search-box {
-    padding: 6px 8px;
-    border-radius: 12px;
+    padding: 5px 10px;
+    border-radius: 10px;
   }
 
   .search-box input {
-    width: 105px;
+    width: 110px;
     font-size: 12px;
   }
 
   .icon-round {
-    width: 34px;
-    height: 34px;
-    border-radius: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    flex-shrink: 0;
   }
 
-  /* plant chip di mobile tetap muncul, tapi kecil */
-  .plant-group {
-    display: flex;
-    gap: 4px;
-    overflow-x: auto;
-    max-width: 160px;
-  }
-
-  .plant-btn {
-    padding: 5px 9px;
-    font-size: 11px;
-    border-radius: 999px;
-    flex: 0 0 auto;
-  }
-
-  /* MAIN MOBILE */
+  /* ════════════════════════
+     MAIN AREA
+  ════════════════════════ */
   .main {
     padding: 10px;
     gap: 8px;
     overflow: hidden;
+    /* pastikan konten tidak meluber ke bawah bottom-nav */
+    padding-bottom: 4px;
   }
 
+  /* ── Metric cards: 2 kolom di HP ── */
   .metrics {
+    display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
+    flex-shrink: 0;
   }
 
   .metric-card {
     border-radius: 14px;
-    padding: 10px 12px;
+    padding: 10px 14px;
   }
 
   .metric-label {
     font-size: 9px;
+    letter-spacing: 0.3px;
   }
 
   .metric-value {
-    font-size: 20px;
+    font-size: 22px;
+    margin-top: 4px;
   }
 
+  /* ── Panel ── */
   .panel {
-    border-radius: 16px;
+    border-radius: 14px;
+    flex: 1;
     min-height: 0;
   }
 
   .panel-header {
-    padding: 9px 10px;
+    padding: 8px 10px;
     gap: 6px;
+    row-gap: 6px;
   }
 
   .panel-title {
@@ -1412,76 +1337,125 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
     padding: 2px 8px;
   }
 
+  /* Date filter: scroll horizontal kalau banyak tombol */
   .date-filter {
     width: 100%;
     overflow-x: auto;
-    padding-top: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .date-filter::-webkit-scrollbar {
+    display: none;
   }
 
   .date-btn {
-    flex: 0 0 auto;
+    flex-shrink: 0;
     font-size: 10px;
     padding: 5px 9px;
+    border-radius: 8px;
   }
 
   .date-inp {
     font-size: 10px;
     height: 28px;
+    flex-shrink: 0;
   }
 
+  /* Action buttons: scroll horizontal */
   .panel-actions {
     width: 100%;
-    display: flex;
-    gap: 6px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .panel-actions::-webkit-scrollbar {
+    display: none;
   }
 
   .action-btn {
-    flex: 0 0 auto;
+    flex-shrink: 0;
     font-size: 11px;
-    padding: 7px 10px;
-    border-radius: 10px;
+    padding: 6px 10px;
+    border-radius: 9px;
+    gap: 4px;
   }
 
+  /* Table area: full scroll touch */
   .table-scroll {
-    overflow: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  /* SIDEBAR JADI BOTTOM NAV */
+  /* ── Data table: compact di HP ── */
+  .data-table {
+    font-size: 11px;
+    min-width: 680px;
+  }
+
+  .data-table th {
+    font-size: 9.5px;
+    padding: 8px 10px;
+    letter-spacing: 0.5px;
+  }
+
+  .data-table td {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  /* ════════════════════════
+     BOTTOM NAVIGATION
+  ════════════════════════ */
   .sidebar {
     grid-area: sidebar;
-    height: 64px;
+    height: 62px;
     flex-direction: row;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 8px;
-    border-right: 0;
+    align-items: stretch;
+    gap: 0;
+    padding: 4px 6px;
+    border-right: none;
     border-top: 1px solid var(--border);
     overflow-x: auto;
     overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    background: var(--surface);
+  }
+
+  .sidebar::-webkit-scrollbar {
+    display: none;
   }
 
   .sidebar-label {
     display: none;
   }
 
+  /* Setiap tombol nav jadi item bottom-bar */
   .nav-btn {
-    flex: 0 0 auto;
-    min-width: 72px;
-    height: 50px;
-    padding: 6px 8px;
-    border-radius: 14px;
+    flex: 1 0 auto;
+    min-width: 60px;
+    max-width: 80px;
+    height: 54px;
+    padding: 6px 4px 4px;
+    border-radius: 12px;
     flex-direction: column;
     justify-content: center;
-    gap: 4px;
-    font-size: 9.5px;
+    align-items: center;
+    gap: 3px;
+    font-size: 9px;
+    font-weight: 600;
     text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .nav-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
   }
 
   .nav-btn.active {
@@ -1489,41 +1463,40 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
     color: var(--gold);
   }
 
-  /* TABLE MOBILE: tetap scroll horizontal, tidak merusak desktop */
-  .data-table {
-    font-size: 11px;
-    min-width: 720px;
-  }
-
-  .data-table th {
-    font-size: 9.5px;
-    padding: 8px 10px;
-  }
-
-  .data-table td {
-    padding: 8px 10px;
-  }
-
-  /* ALERT CENTER MOBILE */
+  /* ════════════════════════
+     ALERT CENTER MOBILE
+  ════════════════════════ */
   .alert-summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
-    padding: 10px;
+    padding: 10px 10px 0;
+  }
+
+  .alert-stat span {
+    font-size: 22px;
   }
 
   .alert-grid {
     grid-template-columns: 1fr;
+    gap: 8px;
     padding: 10px;
   }
 
   .alert-card {
-    border-radius: 14px;
+    border-radius: 12px;
+    padding: 12px;
   }
 
-  /* STOK JALUR MOBILE */
+  .alert-value {
+    font-size: 18px;
+  }
+
+  /* ════════════════════════
+     STOK JALUR MOBILE
+  ════════════════════════ */
   .jalur-filterbar {
     padding: 8px 10px;
-    gap: 8px;
+    gap: 6px;
   }
 
   .jalur-filter {
@@ -1533,27 +1506,29 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
   .jalur-input {
     width: 100%;
     min-width: 0;
+    height: 34px;
+    font-size: 13px;
   }
 
   .jalur-compact-table {
-    min-width: 900px;
+    min-width: 880px;
   }
 
   .jalur-info-col {
-    min-width: 230px;
-    width: 230px;
-    max-width: 230px;
+    min-width: 220px;
+    width: 220px;
+    max-width: 220px;
   }
 
   .jalur-awal-col {
-    left: 230px;
+    left: 220px;
     min-width: 115px;
     width: 115px;
     max-width: 115px;
   }
 
   .jalur-akhir-col {
-    left: 345px;
+    left: 335px;
     min-width: 115px;
     width: 115px;
     max-width: 115px;
@@ -1569,22 +1544,25 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
 
   .jalur-day-card.compact,
   .jalur-day-empty.compact {
-    width: 135px !important;
-    min-width: 135px !important;
-    max-width: 135px !important;
-    flex: 0 0 135px !important;
+    width: 130px !important;
+    min-width: 130px !important;
+    max-width: 130px !important;
+    flex: 0 0 130px !important;
   }
 
+  /* Modal jalur */
   .jalur-modal {
     width: 96vw;
-    max-height: 84dvh;
+    max-height: 82dvh;
   }
 
   .jalur-modal-summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  /* KAPASITAS MOBILE */
+  /* ════════════════════════
+     KAPASITAS GUDANG MOBILE
+  ════════════════════════ */
   .kapasitas-wrap {
     padding: 10px;
   }
@@ -1592,13 +1570,21 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
   .kapasitas-map {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+    perspective: none;
   }
 
+  /* Matikan efek 3D di HP (terlalu berat & aneh di layar kecil) */
   .kapasitas-rack {
     min-height: 130px;
-    border-radius: 16px;
+    border-radius: 14px;
     padding: 12px;
     transform: none;
+    box-shadow: none;
+  }
+
+  .kapasitas-rack:hover {
+    transform: none;
+    box-shadow: none;
   }
 
   .rack-top b {
@@ -1609,11 +1595,74 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
     font-size: 24px;
   }
 
+  /* Modal kapasitas */
   .kapasitas-summary {
     grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .kapasitas-modal {
+    width: 96vw;
+    max-height: 82dvh;
   }
 
   .kap-item-meta {
     grid-template-columns: 1fr;
+  }
+
+  /* ════════════════════════
+     PIN SCREEN MOBILE
+  ════════════════════════ */
+  .pin-card {
+    width: calc(100vw - 40px);
+    max-width: 340px;
+    padding: 32px 24px 28px;
+    border-radius: 28px;
+  }
+
+  .pin-btn {
+    height: 60px;
+    border-radius: 16px;
+  }
+
+  .pin-num {
+    font-size: 22px;
+  }
+}
+
+/* ════════════════════════════════════════
+   TAMBAHAN: layar sangat kecil (≤ 380px)
+   misalnya iPhone SE / Redmi kecil
+════════════════════════════════════════ */
+@media (max-width: 380px) {
+  .metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .metric-value {
+    font-size: 18px;
+  }
+
+  .nav-btn {
+    min-width: 52px;
+    font-size: 8.5px;
+  }
+
+  .alert-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .search-box input {
+    width: 80px;
+  }
+
+  .pin-card {
+    padding: 28px 18px 24px;
+    border-radius: 24px;
+  }
+
+  .pin-btn {
+    height: 54px;
   }
 }
