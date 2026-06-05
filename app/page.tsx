@@ -307,7 +307,21 @@ return Array.from(unique.values());
     return okPlant && okDate;
   })
   .filter(matchSearch);
-  const bonanView     = bonan.filter(matchSearch);
+  const bonanView = bonan
+  .filter((r: any) => {
+    const okPlant =
+      plant === "ALL" || String(r.plant) === plant;
+
+    const rowDate = r.tanggal
+      ? String(r.tanggal).slice(0, 10)
+      : "";
+
+    const okDate =
+      dateMode === "ALL" || !dateFilter || rowDate === dateFilter;
+
+    return okPlant && okDate;
+  })
+  .filter(matchSearch);
   const kapasitasView = kapasitas.filter(matchSearch);
 
  function getSkuVariant(row: any) {
