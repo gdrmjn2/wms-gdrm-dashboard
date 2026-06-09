@@ -192,6 +192,14 @@ async function loadAll() {
 
   // 1. LIFETIME & EXPIRED dari DATA_STOK_GDRM / stock_live
   stockFiltered.forEach((r) => {
+    const tanggalDatang = r.tanggal_kedatangan
+      ? String(r.tanggal_kedatangan).slice(0, 10)
+      : "";
+
+    const tanggalExpired = r.tanggal_expired
+      ? String(r.tanggal_expired).slice(0, 10)
+      : "";
+
     if (r.tanggal_kedatangan) {
       const age = Math.floor(
         (today.getTime() - new Date(r.tanggal_kedatangan).getTime()) /
@@ -204,33 +212,64 @@ async function loadAll() {
           category: "AGING",
           rm: r.nama_rm,
           sku: r.sku_rm,
+          merk: r.merk || "-",
           batch: r.no_batch,
           qty: r.tot_qty_kemasan,
           kg: r.tot_qty_kg,
           plant: r.plant,
           lokasi: r.lokasi_rm,
+          tanggal_datang: tanggalDatang,
+          tanggal_expired: tanggalExpired,
           value: age,
+          value_label: `${age} hari`,
+          note: r.note || "",
+          status: "",
         });
       }
     }
 
     if (r.tanggal_expired) {
       const left = Math.floor(
-        (new Date(r.tanggal_expired).getTime() - today.getTime()) / 86400000
+        (new Date(r.tanggal_expired).getTime() - today.getTime()) /
+          86400000
       );
 
-      if (left <= 20) {
+      let expCategory = "";
+      let expType = "";
+
+      // OPSI A: EKSKLUSIF
+      // 0-30 hari = EXP_30
+      // 31-60 hari = EXP_60
+      // 61-90 hari = EXP_90
+      if (left >= 0 && left <= 30) {
+        expCategory = "EXP_30";
+        expType = "MENDEKATI EXPIRED <30 HARI";
+      } else if (left >= 31 && left <= 60) {
+        expCategory = "EXP_60";
+        expType = "MENDEKATI EXPIRED <60 HARI";
+      } else if (left >= 61 && left <= 90) {
+        expCategory = "EXP_90";
+        expType = "MENDEKATI EXPIRED <90 HARI";
+      }
+
+      if (expCategory) {
         a.push({
-          type: "MENDEKATI EXPIRED",
-          category: "EXPIRED",
+          type: expType,
+          category: expCategory,
           rm: r.nama_rm,
           sku: r.sku_rm,
+          merk: r.merk || "-",
           batch: r.no_batch,
           qty: r.tot_qty_kemasan,
           kg: r.tot_qty_kg,
           plant: r.plant,
           lokasi: r.lokasi_rm,
+          tanggal_datang: tanggalDatang,
+          tanggal_expired: tanggalExpired,
           value: left,
+          value_label: `${left} hari lagi`,
+          note: r.note || "",
+          status: "",
         });
       }
     }
@@ -256,12 +295,16 @@ async function loadAll() {
       category: "HOLD",
       rm: r.nama_rm,
       sku: r.sku_rm,
+      merk: "-",
       batch: "-",
       qty: r.qty_kemasan,
       kg: r.qty_kg,
       plant: r.plant,
       lokasi: "-",
+      tanggal_datang: r.tanggal ? String(r.tanggal).slice(0, 10) : "",
+      tanggal_expired: "",
       value: age,
+      value_label: `${age} hari`,
       note: r.note,
       status: r.status,
     });
@@ -269,24 +312,27 @@ async function loadAll() {
 
   const unique = new Map();
 
-a.forEach((x) => {
-  const key = [
-    x.category,
-    x.plant,
-    x.sku,
-    x.batch,
-    x.qty,
-    x.kg,
-    x.value,
-    x.note || "",
-    x.status || ""
-  ].join("_");
+  a.forEach((x) => {
+    const key = [
+      x.category,
+      x.plant,
+      x.sku,
+      x.merk,
+      x.batch,
+      x.qty,
+      x.kg,
+      x.value,
+      x.note || "",
+      x.status || "",
+    ].join("_");
 
-  unique.set(key, x);
-});
+    unique.set(key, x);
+  });
 
-return Array.from(unique.values());
+  return Array.from(unique.values());
 }, [stockFiltered, hold, plant]);
+
+  
   const stockView     = stockFiltered.filter(matchSearch);
   const fifoView      = fifo.filter(matchSearch);
   const alertView = alerts
@@ -1104,19 +1150,37 @@ function downloadCurrentDataPDF() {
       r.lokasi_rm
     ]);
   } else if (menu === "Alert Center") {
-    head = ["Kategori", "SKU", "RM", "Plant", "Batch", "Qty", "KG", "Hari", "Note"];
+  head = [
+    "Kategori",
+    "Plant",
+    "SKU",
+    "Nama RM",
+    "Merk",
+    "Batch",
+    "Datang",
+    "Expired",
+    "Hari",
+    "Qty PCS",
+    "Qty KG",
+    "Lokasi",
+    "Note / Status"
+  ];
 
-    body = alertView.map((r: any) => [
-      r.type,
-      r.sku,
-      r.rm,
-      r.plant,
-      r.batch,
-      fmt0(r.qty),
-      fmt2(r.kg),
-      r.value,
-      r.note || r.status || ""
-    ]);
+  body = alertView.map((r: any) => [
+    r.type,
+    r.plant,
+    r.sku,
+    r.rm,
+    r.merk || "-",
+    r.batch,
+    r.tanggal_datang || "-",
+    r.tanggal_expired || "-",
+    r.value_label || `${r.value} hari`,
+    fmt0(r.qty),
+    fmt2(r.kg),
+    r.lokasi || "-",
+    r.note || r.status || ""
+  ]);
     } else if (menu === "Stok Jalur") {
   head = [
     "Plant",
@@ -1530,15 +1594,26 @@ function FIFOTable({ rows }: any) {
 function AlertView({ rows, allRows, alertFilter, setAlertFilter }: any) {
   const hold = allRows.filter((r: any) => r.category === "HOLD");
   const aging = allRows.filter((r: any) => r.category === "AGING");
-  const expired = allRows.filter((r: any) => r.category === "EXPIRED");
+  const exp30 = allRows.filter((r: any) => r.category === "EXP_30");
+  const exp60 = allRows.filter((r: any) => r.category === "EXP_60");
+  const exp90 = allRows.filter((r: any) => r.category === "EXP_90");
 
   function toggle(cat: string) {
     setAlertFilter(alertFilter === cat ? "ALL" : cat);
   }
 
+  function catLabel(cat: string) {
+    if (cat === "HOLD") return "HOLD";
+    if (cat === "AGING") return "LIFETIME >4";
+    if (cat === "EXP_30") return "EXP <30";
+    if (cat === "EXP_60") return "EXP <60";
+    if (cat === "EXP_90") return "EXP <90";
+    return cat;
+  }
+
   return (
-    <div>
-      <div className="alert-summary">
+    <div className="alert-table-wrap">
+      <div className="alert-summary alert-summary-5">
         <button
           className={`alert-stat hold-stat ${alertFilter === "HOLD" ? "active" : ""}`}
           onClick={() => toggle("HOLD")}
@@ -1554,29 +1629,95 @@ function AlertView({ rows, allRows, alertFilter, setAlertFilter }: any) {
         </button>
 
         <button
-          className={`alert-stat expired-stat ${alertFilter === "EXPIRED" ? "active" : ""}`}
-          onClick={() => toggle("EXPIRED")}
+          className={`alert-stat exp30-stat ${alertFilter === "EXP_30" ? "active" : ""}`}
+          onClick={() => toggle("EXP_30")}
         >
-          <span>{expired.length}</span>Mendekati Expired
+          <span>{exp30.length}</span>Expired &lt;30 Hari
+        </button>
+
+        <button
+          className={`alert-stat exp60-stat ${alertFilter === "EXP_60" ? "active" : ""}`}
+          onClick={() => toggle("EXP_60")}
+        >
+          <span>{exp60.length}</span>Expired &lt;60 Hari
+        </button>
+
+        <button
+          className={`alert-stat exp90-stat ${alertFilter === "EXP_90" ? "active" : ""}`}
+          onClick={() => toggle("EXP_90")}
+        >
+          <span>{exp90.length}</span>Expired &lt;90 Hari
         </button>
       </div>
 
-      <div className="alert-grid">
-        {rows.map((r: any, i: number) => (
-          <div className={`alert-card cat-${r.category.toLowerCase()}`} key={i}>
-            <div className="alert-type">{r.type}</div>
-            <div className="alert-name">{r.rm}</div>
-            <div className="alert-detail">{r.sku} · Plant {r.plant} · Batch {r.batch}</div>
-            <div className="alert-detail">Qty: {fmt0(r.qty)} zak · {fmt2(r.kg)} kg</div>
-            {r.note && <div className="alert-note">📋 {r.note}</div>}
-            {r.status && <div className="alert-detail">Status: {r.status}</div>}
-            <div className="alert-value">{r.value} hari</div>
-          </div>
-        ))}
+      <div className="alert-table-scroll">
+        <table className="data-table alert-clean-table">
+          <thead>
+            <tr>
+              <th>Kategori</th>
+              <th>Plant</th>
+              <th>SKU RM</th>
+              <th>Nama RM</th>
+              <th>Merk</th>
+              <th>Batch</th>
+              <th>Datang</th>
+              <th>Expired</th>
+              <th>Hari</th>
+              <th>Qty PCS</th>
+              <th>Qty KG</th>
+              <th>Lokasi</th>
+              <th>Note / Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {rows.map((r: any, i: number) => (
+              <tr key={i}>
+                <td>
+                  <span className={`alert-pill alert-pill-${String(r.category).toLowerCase()}`}>
+                    {catLabel(r.category)}
+                  </span>
+                </td>
+
+                <td>
+                  <Badge text={String(r.plant || "-")} variant="blue" />
+                </td>
+
+                <td className="bold">{r.sku || "-"}</td>
+                <td className="bold alert-rm-name">{r.rm || "-"}</td>
+                <td className="muted">{r.merk || "-"}</td>
+                <td className="muted">{r.batch || "-"}</td>
+                <td className="muted">{r.tanggal_datang || "-"}</td>
+                <td className="muted">{r.tanggal_expired || "-"}</td>
+
+                <td className="bold">
+                  {r.value_label || `${r.value} hari`}
+                </td>
+
+                <td className="num blue">{fmt0(r.qty)}</td>
+                <td className="num green">{fmt2(r.kg)}</td>
+                <td className="muted">{r.lokasi || "-"}</td>
+
+                <td className="muted sm">
+                  {r.note || r.status || "-"}
+                </td>
+              </tr>
+            ))}
+
+            {!rows.length && (
+              <tr>
+                <td colSpan={13} className="muted" style={{ textAlign: "center", padding: 28 }}>
+                  Tidak ada data alert untuk filter ini.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
+
 function KapasitasTable({ rows, stock }: any) {
   const [selected, setSelected] = useState<any | null>(null);
 
