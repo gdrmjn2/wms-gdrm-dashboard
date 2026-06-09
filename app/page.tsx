@@ -1307,13 +1307,43 @@ function logout() {
       <main className="main">
 
         {/* Metric cards */}
-        <div className="metrics">
-          <MetricCard label="Batch Ready"    value={fmt0(stockView.length)}         color="gold" />
-          <MetricCard label="Total Kemasan"  value={fmt0(stockView.reduce((a, b) => a + Number(b.tot_qty_kemasan || 0), 0))} color="blue" />
-          <MetricCard label="Total KG"       value={fmt2(stockView.reduce((a, b) => a + Number(b.tot_qty_kg || 0), 0))}       color="green" />
-          <MetricCard label="Alert Aktif"    value={fmt0(alertView.length)}          color="red" />
-        </div>
+       <div className="metrics">
+  <MetricCard
+    label={menu === "Stok Jalur" ? "Jalur Aktif" : "Batch Ready"}
+    value={fmt0(menu === "Stok Jalur" ? stokJalurView.length : stockView.length)}
+    color="gold"
+  />
 
+  <MetricCard
+    label={menu === "Stok Jalur" ? "Stock Awal PCS" : "Total Kemasan"}
+    value={fmt0(
+      menu === "Stok Jalur"
+        ? stokJalurView.reduce((a: number, b: any) => a + Number(b.masuk_pcs || 0), 0)
+        : stockView.reduce((a: number, b: any) => a + Number(b.tot_qty_kemasan || 0), 0)
+    )}
+    color="blue"
+  />
+
+  <MetricCard
+    label={menu === "Stok Jalur" ? "Stock Awal KG" : "Total KG"}
+    value={fmt2(
+      menu === "Stok Jalur"
+        ? stokJalurView.reduce((a: number, b: any) => a + Number(b.masuk_kg || 0), 0)
+        : stockView.reduce((a: number, b: any) => a + Number(b.tot_qty_kg || 0), 0)
+    )}
+    color="green"
+  />
+
+  <MetricCard
+    label={menu === "Stok Jalur" ? "Stock Akhir PCS" : "Alert Aktif"}
+    value={fmt0(
+      menu === "Stok Jalur"
+        ? stokJalurView.reduce((a: number, b: any) => a + Number(b.sisa_pcs || 0), 0)
+        : alertView.length
+    )}
+    color="red"
+  />
+</div>
         {/* Panel */}
         <div className="panel">
           {/* Panel header */}
