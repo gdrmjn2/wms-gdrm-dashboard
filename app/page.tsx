@@ -1559,8 +1559,9 @@ function logout() {
   {menu === "Stok Jalur" && (
     <>
       {" "} | masuk: {masuk.length}
-      {" "} | keluar: {keluar.length}
-      {" "} | jalur: {stokJalurView.length}
+{" "} | keluar: {keluar.length}
+{" "} | sto: {sto.length}
+{" "} | jalur: {stokJalurView.length}
     </>
   )}
 </span>
