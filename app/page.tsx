@@ -416,25 +416,32 @@ const stokJalurView = useMemo(() => {
   });
 
   const masukFiltered = masuk.filter((r: any) => {
-    const okPlant =
-      plant === "ALL" || String(r.plant) === plant;
+  const okPlant =
+    plant === "ALL" || String(r.plant) === plant;
 
-    const okSku =
-      jalurSku === "ALL" || String(r.sku_rm || "") === jalurSku;
+  const rowDate = r.tanggal_kedatangan
+    ? String(r.tanggal_kedatangan).slice(0, 10)
+    : "";
 
-    const merk = getJalurMerk(r);
+  const okDate =
+    dateMode === "ALL" || !dateFilter || rowDate === dateFilter;
 
-    const okMerk =
-      jalurMerk === "ALL" || merk === jalurMerk;
+  const okSku =
+    jalurSku === "ALL" || String(r.sku_rm || "") === jalurSku;
 
-    const okBatch =
-      !jalurBatch ||
-      String(r.no_batch || "")
-        .toLowerCase()
-        .includes(jalurBatch.toLowerCase());
+  const merk = getJalurMerk(r);
 
-    return okPlant && okSku && okMerk && okBatch;
-  });
+  const okMerk =
+    jalurMerk === "ALL" || merk === jalurMerk;
+
+  const okBatch =
+    !jalurBatch ||
+    String(r.no_batch || "")
+      .toLowerCase()
+      .includes(jalurBatch.toLowerCase());
+
+  return okPlant && okDate && okSku && okMerk && okBatch;
+});
 
   const group: any = {};
 
@@ -521,6 +528,8 @@ const stokJalurView = useMemo(() => {
   masuk,
   keluar,
   plant,
+  dateMode,
+  dateFilter,
   jalurSku,
   jalurMerk,
   jalurBatch,
