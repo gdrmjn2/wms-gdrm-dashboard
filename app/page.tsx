@@ -523,52 +523,45 @@ const stokJalurView = useMemo(() => {
   }
 
   // DATA_RM_KELUAR = mengurangi plant pemilik / plant_tujuan + sku_qr
-  keluar.forEach((r: any) => {
-    const skuQr = String(r.sku_qr || "").trim();
+keluar.forEach((r: any) => {
+  const skuQr = String(r.sku_qr || "").trim();
+  const plantOwner = String(r.plant_tujuan || "").trim();
 
-    if (!skuQr) return;
+  if (!skuQr || !plantOwner) return;
 
-    const okPlantKeluar =
-      plant === "ALL" || String(r.plant_tujuan || "") === plant;
+  const key = jalurKey(plantOwner, skuQr);
 
-    if (!okPlantKeluar) return;
-
-    const key = jalurKey(r.plant_tujuan, skuQr);
-
-    pushMovement(key, {
-      jenis: "KELUAR",
-      tanggal: r.tanggal,
-      jam: r.jam,
-      plant_tujuan: r.plant_tujuan,
-      no_palet: r.no_palet,
-      qty_kemasan: Number(r.qty_kemasan || 0),
-      qty_kg: Number(r.qty_kg || 0),
-    });
+  pushMovement(key, {
+    jenis: "KELUAR",
+    tanggal: r.tanggal,
+    jam: r.jam,
+    plant_tujuan: plantOwner,
+    no_palet: r.no_palet,
+    qty_kemasan: Number(r.qty_kemasan || 0),
+    qty_kg: Number(r.qty_kg || 0),
   });
+});
 
-  // DATA_STO = hanya mengurangi plant asal dulu
-  sto.forEach((r: any) => {
-    const skuQr = String(r.sku_qr || "").trim();
+ // DATA_STO = mengurangi plant asal + sku_qr
+sto.forEach((r: any) => {
+  const skuQr = String(r.sku_qr || "").trim();
+  const plantAsal = String(r.plant_asal || "").trim();
+  const plantTujuan = String(r.plant_tujuan || "").trim();
 
-    if (!skuQr) return;
+  if (!skuQr || !plantAsal) return;
 
-    const okPlantAsal =
-      plant === "ALL" || String(r.plant_asal || "") === plant;
+  const key = jalurKey(plantAsal, skuQr);
 
-    if (!okPlantAsal) return;
-
-    const key = jalurKey(r.plant_asal, skuQr);
-
-    pushMovement(key, {
-      jenis: "STO OUT",
-      tanggal: r.tanggal,
-      jam: "",
-      plant_tujuan: r.plant_tujuan,
-      no_palet: "STO",
-      qty_kemasan: Number(r.qty_zakkemasan || 0),
-      qty_kg: Number(r.qty_kg || 0),
-    });
+  pushMovement(key, {
+    jenis: "STO OUT",
+    tanggal: r.tanggal,
+    jam: "",
+    plant_tujuan: plantTujuan,
+    no_palet: "STO",
+    qty_kemasan: Number(r.qty_zakkemasan || 0),
+    qty_kg: Number(r.qty_kg || 0),
   });
+});
 
   const group: any = {};
 
@@ -2389,7 +2382,9 @@ function StokJalurTable({
                   <div>
                     Qty: <b>{fmt0(d.qty_kemasan)} pcs</b> | <b>{fmt2(d.qty_kg)} kg</b>
                   </div>
-
+<div className="muted sm">
+  Key: {d.plant_tujuan || "-"} | {d.sku_qr || ""}
+</div>
                   <div>
   Jenis: <b>{d.jenis || "KELUAR"}</b>
 </div>
