@@ -421,7 +421,8 @@ const stokJalurView = useMemo(() => {
 });
 
   const masukFiltered = masuk.filter((r: any) => {
-  const okPlant = true;
+  const okPlant =
+    plant === "ALL" || String(r.plant) === plant;
 
   const rowDate = r.tanggal_kedatangan
     ? String(r.tanggal_kedatangan).slice(0, 10)
@@ -610,23 +611,28 @@ function buildJalurBySku(skuRm: any) {
   const keluarBySkuQr: any = {};
 
   keluar.forEach((r: any) => {
-    const key = String(r.sku_qr || "").trim();
+  const key = String(r.sku_qr || "").trim();
 
-    if (!key) return;
+  if (!key) return;
 
-    if (!keluarBySkuQr[key]) {
-      keluarBySkuQr[key] = [];
-    }
+  const okPlantKeluar =
+    plant === "ALL" || String(r.plant_tujuan || "") === plant;
 
-    keluarBySkuQr[key].push({
-      tanggal: r.tanggal,
-      jam: r.jam,
-      plant_tujuan: r.plant_tujuan,
-      no_palet: r.no_palet,
-      qty_kemasan: Number(r.qty_kemasan || 0),
-      qty_kg: Number(r.qty_kg || 0),
-    });
+  if (!okPlantKeluar) return;
+
+  if (!keluarBySkuQr[key]) {
+    keluarBySkuQr[key] = [];
+  }
+
+  keluarBySkuQr[key].push({
+    tanggal: r.tanggal,
+    jam: r.jam,
+    plant_tujuan: r.plant_tujuan,
+    no_palet: r.no_palet,
+    qty_kemasan: Number(r.qty_kemasan || 0),
+    qty_kg: Number(r.qty_kg || 0),
   });
+});
 
   const group: any = {};
 
@@ -1988,11 +1994,12 @@ function StokJalurTable({
         <table className="data-table jalur-compact-table">
           <thead>
             <tr>
-              <th className="jalur-sticky jalur-info-col">Barang</th>
-              <th className="jalur-sticky jalur-awal-col">Stock Awal</th>
-              <th className="jalur-sticky jalur-akhir-col">Stock Akhir</th>
-              <th className="jalur-detail-col">Detail Jalur</th>
-            </tr>
+  <th className="jalur-sticky jalur-date-in-col">Tgl Datang</th>
+  <th className="jalur-sticky jalur-info-col">Barang</th>
+  <th className="jalur-sticky jalur-awal-col">Stock Awal</th>
+  <th className="jalur-sticky jalur-akhir-col">Stock Akhir</th>
+  <th className="jalur-detail-col">Detail Jalur</th>
+</tr>
           </thead>
 
           <tbody>
@@ -2003,8 +2010,16 @@ function StokJalurTable({
 
               return (
                 <tr key={`${r.sku_qr}_${i}`}>
-                  <td className="jalur-sticky jalur-info-col">
-                    <div className="jalur-name">{r.nama_rm}</div>
+  <td className="jalur-sticky jalur-date-in-col">
+    <div className="jalur-date-in">
+      {r.tanggal_kedatangan
+        ? String(r.tanggal_kedatangan).slice(0, 10)
+        : "-"}
+    </div>
+  </td>
+
+  <td className="jalur-sticky jalur-info-col">
+    <div className="jalur-name">{r.nama_rm}</div>
                     <div className="muted sm">SKU RM: {r.sku_rm}</div>
                     <div className="muted sm">Merk: {r.merk || "-"}</div>
                     <div className="muted sm">Batch: {r.no_batch || "-"}</div>
