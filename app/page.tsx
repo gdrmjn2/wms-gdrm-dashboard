@@ -482,70 +482,73 @@ const jalurMerkOptions = Array.from(
 const jalurVariants = jalurMerkOptions;
 
 const stokJalurView = useMemo(() => {
-  const keluarBySkuQr: any = {};
+  const movementByKey: any = {};
 
-  keluar.forEach((r: any) => {
-  const key = String(r.sku_qr || "").trim();
+  function pushMovement(key: string, d: any) {
+    if (!key) return;
 
-  if (!key) return;
+    if (!movementByKey[key]) {
+      movementByKey[key] = [];
+    }
 
-  const okPlantKeluar =
-    plant === "ALL" || String(r.plant_tujuan || "") === plant;
-
-  if (!okPlantKeluar) return;
-
-  if (!keluarBySkuQr[key]) {
-    keluarBySkuQr[key] = [];
+    movementByKey[key].push(d);
   }
 
-  keluarBySkuQr[key].push({
-    tanggal: r.tanggal,
-    jam: r.jam,
-    plant_tujuan: r.plant_tujuan,
-    no_palet: r.no_palet,
-    qty_kemasan: Number(r.qty_kemasan || 0),
-    qty_kg: Number(r.qty_kg || 0),
+  // 1. DATA_RM_KELUAR = keluar / pemakaian dari plant tujuan
+  keluar.forEach((r: any) => {
+    const skuQr = String(r.sku_qr || "").trim();
+
+    if (!skuQr) return;
+
+    const okPlantKeluar =
+      plant === "ALL" || String(r.plant_tujuan || "") === plant;
+
+    if (!okPlantKeluar) return;
+
+    const key = jalurKey(r.plant_tujuan, skuQr);
+
+    pushMovement(key, {
+      jenis: "KELUAR",
+      tanggal: r.tanggal,
+      jam: r.jam,
+      plant_tujuan: r.plant_tujuan,
+      no_palet: r.no_palet,
+      qty_kemasan: Number(r.qty_kemasan || 0),
+      qty_kg: Number(r.qty_kg || 0),
+    });
   });
-});
 
-  const masukFiltered = masuk.filter((r: any) => {
-  const okPlant =
-    plant === "ALL" || String(r.plant) === plant;
+  // 2. DATA_STO = keluar dari plant asal
+  sto.forEach((r: any) => {
+    const skuQr = String(r.sku_qr || "").trim();
 
-  const rowDate = r.tanggal_kedatangan
-    ? String(r.tanggal_kedatangan).slice(0, 10)
-    : "";
+    if (!skuQr) return;
 
-  const okDate =
-    dateMode === "ALL" || !dateFilter || rowDate === dateFilter;
+    const okPlantAsal =
+      plant === "ALL" || String(r.plant_asal || "") === plant;
 
-  const okSku =
-    jalurSku === "ALL" || String(r.sku_rm || "") === jalurSku;
+    if (!okPlantAsal) return;
 
-  const merk = getJalurMerk(r);
+    const key = jalurKey(r.plant_asal, skuQr);
 
-  const okMerk =
-    jalurMerk === "ALL" || merk === jalurMerk;
-
-  const okBatch =
-    !jalurBatch ||
-    String(r.no_batch || "")
-      .toLowerCase()
-      .includes(jalurBatch.toLowerCase());
-
-  return okPlant && okDate && okSku && okMerk && okBatch;
-});
+    pushMovement(key, {
+      jenis: "STO OUT",
+      tanggal: r.tanggal,
+      jam: "",
+      plant_tujuan: r.plant_tujuan,
+      no_palet: "STO",
+      qty_kemasan: Number(r.qty_zakkemasan || 0),
+      qty_kg: Number(r.qty_kg || 0),
+    });
+  });
 
   const group: any = {};
 
-  masukFiltered.forEach((r: any) => {
-    const key = String(r.sku_qr || "");
-
-    if (!key) return;
-
+  function ensureGroup(key: string, r: any) {
     if (!group[key]) {
       group[key] = {
-        sku_qr: key,
+        key,
+        sku_qr: String(r.sku_qr || "").trim(),
         plant: r.plant,
         sku_rm: r.sku_rm,
         nama_rm: r.nama_rm,
@@ -553,7 +556,7 @@ const stokJalurView = useMemo(() => {
         no_batch: r.no_batch || "-",
         tanggal_kedatangan: r.tanggal_kedatangan,
         tanggal_expired: r.tanggal_expired,
-        lokasi_rm: r.lokasi_rm,
+        lokasi_rm: r.lokasi_rm || "-",
         masuk_pcs: 0,
         masuk_kg: 0,
         keluar_pcs: 0,
@@ -563,13 +566,89 @@ const stokJalurView = useMemo(() => {
         daily: {},
       };
     }
+  }
 
-    group[key].masuk_pcs += Number(r.qty_kemasan || 0);
+  function passFilter(r: any) {
+    const okPlant =
+      plant === "ALL" || String(r.plant) === plant;
+
+    const rowDate = r.tanggal_kedatangan
+      ? String(r.tanggal_kedatangan).slice(0, 10)
+      : "";
+
+    const okDate =
+      dateMode === "ALL" || !dateFilter || rowDate === dateFilter;
+
+    const okSku =
+      jalurSku === "ALL" || String(r.sku_rm || "") === jalurSku;
+
+    const merk = getJalurMerk(r);
+
+    const okMerk =
+      jalurMerk === "ALL" || merk === jalurMerk;
+
+    const okBatch =
+      !jalurBatch ||
+      String(r.no_batch || "")
+        .toLowerCase()
+        .includes(jalurBatch.toLowerCase());
+
+    return okPlant && okDate && okSku && okMerk && okBatch;
+  }
+
+  // 3. DATA_RM_MASUK = kedatangan asli
+  masuk.forEach((r: any) => {
+    const skuQr = String(r.sku_qr || "").trim();
+
+    if (!skuQr) return;
+
+    const row = {
+      ...r,
+      sku_qr: skuQr,
+    };
+
+    if (!passFilter(row)) return;
+
+    const key = jalurKey(row.plant, skuQr);
+
+    ensureGroup(key, row);
+
+    group[key].masuk_pcs += Number(row.qty_kemasan || 0);
+    group[key].masuk_kg += Number(row.qty_kg || 0);
+  });
+
+  // 4. DATA_STO = kedatangan baru di plant tujuan
+  sto.forEach((r: any) => {
+    const skuQr = String(r.sku_qr || "").trim();
+
+    if (!skuQr) return;
+
+    const asal: any = findMasukBySkuQr(skuQr) || {};
+
+    const virtualIn = {
+      ...asal,
+      plant: r.plant_tujuan,
+      sku_qr: skuQr,
+      tanggal_kedatangan: r.tanggal,
+      qty_kemasan: Number(r.qty_zakkemasan || 0),
+      qty_kg: Number(r.qty_kg || 0),
+      lokasi_rm: asal.lokasi_rm || "-",
+      sumber_jalur: `STO dari ${r.plant_asal}`,
+    };
+
+    if (!passFilter(virtualIn)) return;
+
+    const key = jalurKey(r.plant_tujuan, skuQr);
+
+    ensureGroup(key, virtualIn);
+
+    group[key].masuk_pcs += Number(r.qty_zakkemasan || 0);
     group[key].masuk_kg += Number(r.qty_kg || 0);
   });
 
+  // 5. Hitung running stock per plant + sku_qr
   Object.values(group).forEach((item: any) => {
-    const details = [...(keluarBySkuQr[item.sku_qr] || [])].sort(
+    const details = [...(movementByKey[item.key] || [])].sort(
       (a: any, b: any) => {
         const da = new Date(`${a.tanggal || ""} ${a.jam || ""}`).getTime();
         const db = new Date(`${b.tanggal || ""} ${b.jam || ""}`).getTime();
@@ -620,6 +699,7 @@ const stokJalurView = useMemo(() => {
 }, [
   masuk,
   keluar,
+  sto,
   plant,
   dateMode,
   dateFilter,
