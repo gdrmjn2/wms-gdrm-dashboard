@@ -494,7 +494,35 @@ const stokJalurView = useMemo(() => {
     movementByKey[key].push(d);
   }
 
-  // DATA_RM_KELUAR = keluar dari plant pemilik / plant_tujuan
+  function passFilter(r: any) {
+    const okPlant =
+      plant === "ALL" || String(r.plant) === plant;
+
+    const rowDate = r.tanggal_kedatangan
+      ? String(r.tanggal_kedatangan).slice(0, 10)
+      : "";
+
+    const okDate =
+      dateMode === "ALL" || !dateFilter || rowDate === dateFilter;
+
+    const okSku =
+      jalurSku === "ALL" || String(r.sku_rm || "") === jalurSku;
+
+    const merk = getJalurMerk(r);
+
+    const okMerk =
+      jalurMerk === "ALL" || merk === jalurMerk;
+
+    const okBatch =
+      !jalurBatch ||
+      String(r.no_batch || "")
+        .toLowerCase()
+        .includes(jalurBatch.toLowerCase());
+
+    return okPlant && okDate && okSku && okMerk && okBatch;
+  }
+
+  // DATA_RM_KELUAR = mengurangi plant pemilik / plant_tujuan + sku_qr
   keluar.forEach((r: any) => {
     const skuQr = String(r.sku_qr || "").trim();
 
@@ -518,7 +546,7 @@ const stokJalurView = useMemo(() => {
     });
   });
 
-  // DATA_STO = keluar dari plant asal
+  // DATA_STO = hanya mengurangi plant asal dulu
   sto.forEach((r: any) => {
     const skuQr = String(r.sku_qr || "").trim();
 
@@ -568,35 +596,7 @@ const stokJalurView = useMemo(() => {
     }
   }
 
-  function passFilter(r: any) {
-    const okPlant =
-      plant === "ALL" || String(r.plant) === plant;
-
-    const rowDate = r.tanggal_kedatangan
-      ? String(r.tanggal_kedatangan).slice(0, 10)
-      : "";
-
-    const okDate =
-      dateMode === "ALL" || !dateFilter || rowDate === dateFilter;
-
-    const okSku =
-      jalurSku === "ALL" || String(r.sku_rm || "") === jalurSku;
-
-    const merk = getJalurMerk(r);
-
-    const okMerk =
-      jalurMerk === "ALL" || merk === jalurMerk;
-
-    const okBatch =
-      !jalurBatch ||
-      String(r.no_batch || "")
-        .toLowerCase()
-        .includes(jalurBatch.toLowerCase());
-
-    return okPlant && okDate && okSku && okMerk && okBatch;
-  }
-
-  // DATA_RM_MASUK = masuk asli, dipisah plant + sku_qr
+  // DATA_RM_MASUK = satu-satunya stock awal
   masuk.forEach((r: any) => {
     const skuQr = String(r.sku_qr || "").trim();
 
@@ -615,35 +615,6 @@ const stokJalurView = useMemo(() => {
 
     group[key].masuk_pcs += Number(row.qty_kemasan || 0);
     group[key].masuk_kg += Number(row.qty_kg || 0);
-  });
-
-  // DATA_STO = masuk baru ke plant tujuan, SKU QR tetap sama
-  sto.forEach((r: any) => {
-    const skuQr = String(r.sku_qr || "").trim();
-
-    if (!skuQr) return;
-
-    const asal: any = findMasukBySkuQr(skuQr) || {};
-
-    const virtualIn = {
-      ...asal,
-      plant: r.plant_tujuan,
-      sku_qr: skuQr,
-      tanggal_kedatangan: r.tanggal,
-      qty_kemasan: Number(r.qty_zakkemasan || 0),
-      qty_kg: Number(r.qty_kg || 0),
-      lokasi_rm: asal.lokasi_rm || "-",
-      sumber_jalur: `STO dari ${r.plant_asal}`,
-    };
-
-    if (!passFilter(virtualIn)) return;
-
-    const key = jalurKey(r.plant_tujuan, skuQr);
-
-    ensureGroup(key, virtualIn);
-
-    group[key].masuk_pcs += Number(r.qty_zakkemasan || 0);
-    group[key].masuk_kg += Number(r.qty_kg || 0);
   });
 
   // Hitung running stock per plant + sku_qr
