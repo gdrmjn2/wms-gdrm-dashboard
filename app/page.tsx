@@ -129,9 +129,11 @@ const [unlocked, setUnlocked] = useState(() => {
   const [service, setService] = useState<any[]>([]);
   const [bonan, setBonan] = useState<any[]>([]);
   const [keluar, setKeluar] = useState<any[]>([]);
-  const [kapasitas, setKapasitas] = useState<any[]>([]);
-  const [hold, setHold] = useState<any[]>([]);
+const [sto, setSto] = useState<any[]>([]);
+const [kapasitas, setKapasitas] = useState<any[]>([]);
+const [hold, setHold] = useState<any[]>([]);
 
+  
   const todayStr = new Date().toISOString().slice(0, 10);
   const [dateFilter, setDateFilter] = useState(todayStr);
   const [dateMode, setDateMode] = useState("ALL");
@@ -144,11 +146,12 @@ const [unlocked, setUnlocked] = useState(() => {
 }, [unlocked]);
   
 async function loadAll() {
-  const [s, sl, b, k, kg, h, m] = await Promise.all([
+  const [s, sl, b, k, st, kg, h, m] = await Promise.all([
     supabase.from("stock_live").select("*").limit(10000),
     supabase.from("master_kedatangan").select("*").limit(3000),
     supabase.from("bonan_ppic").select("*").limit(3000),
     supabase.from("transaksi_keluar").select("*").limit(10000),
+    supabase.from("transaksi_sto").select("*").limit(10000),
     supabase.from("kapasitas_gudang").select("*").limit(1000),
     supabase.from("transaksi_hold").select("*").limit(3000),
     supabase.from("transaksi_masuk").select("*").limit(10000),
@@ -158,6 +161,7 @@ async function loadAll() {
   setService(sl.data || []);
   setBonan(b.data || []);
   setKeluar(k.data || []);
+  setSto(st.data || []);
   setKapasitas(kg.data || []);
   setHold(h.data || []);
   setMasuk(m.data || []);
@@ -410,9 +414,39 @@ function dateKey_(v: any) {
   return String(v).slice(0, 10);
 }
 
+function jalurKey(plantValue: any, skuQr: any) {
+  return `${String(plantValue || "").trim()}|${String(skuQr || "").trim()}`;
+}
+
+function findMasukBySkuQr(skuQr: any) {
+  const key = String(skuQr || "").trim();
+
+  return masuk.find(
+    (r: any) => String(r.sku_qr || "").trim() === key
+  );
+}
+
+  
+const jalurMasterRows = [
+  ...masuk,
+  ...sto.map((s: any) => {
+    const asal: any = findMasukBySkuQr(s.sku_qr) || {};
+
+    return {
+      ...asal,
+      plant: s.plant_tujuan,
+      sku_qr: String(s.sku_qr || "").trim(),
+      tanggal_kedatangan: s.tanggal,
+      qty_kemasan: Number(s.qty_zakkemasan || 0),
+      qty_kg: Number(s.qty_kg || 0),
+      sumber_jalur: "STO_IN",
+    };
+  }),
+];
+
 const jalurSkuMap = new Map<string, any>();
 
-masuk
+jalurMasterRows
   .filter((r: any) => plant === "ALL" || String(r.plant) === plant)
   .forEach((r: any) => {
     const sku = String(r.sku_rm || "");
@@ -433,8 +467,8 @@ const jalurSkuOptions = Array.from(jalurSkuMap.values()).sort((a: any, b: any) =
 
 const jalurMerkOptions = Array.from(
   new Set(
-    masuk
-      .filter((r: any) => {
+    jalurMasterRows
+  .filter((r: any) => {
         const okPlant = plant === "ALL" || String(r.plant) === plant;
         const okSku = jalurSku === "ALL" || String(r.sku_rm || "") === jalurSku;
 
@@ -2305,8 +2339,12 @@ function StokJalurTable({
                   </div>
 
                   <div>
-                    Tujuan: {d.plant_tujuan || "-"} · Palet: {d.no_palet || "-"}
-                  </div>
+  Jenis: <b>{d.jenis || "KELUAR"}</b>
+</div>
+
+<div>
+  Tujuan: {d.plant_tujuan || "-"} · Palet: {d.no_palet || "-"}
+</div>
 
                   <div className="timeline-sisa">
                     Sisa setelah keluar: {fmt0(d.sisa_after_pcs)} pcs | {fmt2(d.sisa_after_kg)} kg
