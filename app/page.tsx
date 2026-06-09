@@ -145,26 +145,72 @@ const [hold, setHold] = useState<any[]>([]);
   }
 }, [unlocked]);
   
+async function fetchAllRows(tableName: string, batchSize = 1000) {
+  let allRows: any[] = [];
+  let from = 0;
+
+  while (true) {
+    const to = from + batchSize - 1;
+
+    const { data, error } = await supabase
+      .from(tableName)
+      .select("*")
+      .range(from, to);
+
+    if (error) {
+      console.error(`ERROR FETCH ${tableName}`, error);
+      break;
+    }
+
+    const rows = data || [];
+
+    allRows = allRows.concat(rows);
+
+    if (rows.length < batchSize) {
+      break;
+    }
+
+    from += batchSize;
+
+    // pengaman supaya browser tidak hang kalau table terlalu besar
+    if (from > 50000) {
+      console.warn(`STOP FETCH ${tableName}: lebih dari 50000 row`);
+      break;
+    }
+  }
+
+  return allRows;
+}
+
 async function loadAll() {
-  const [s, sl, b, k, st, kg, h, m] = await Promise.all([
-    supabase.from("stock_live").select("*").limit(10000),
-    supabase.from("master_kedatangan").select("*").limit(3000),
-    supabase.from("bonan_ppic").select("*").limit(3000),
-    supabase.from("transaksi_keluar").select("*").limit(10000),
-    supabase.from("transaksi_sto").select("*").limit(10000),
-    supabase.from("kapasitas_gudang").select("*").limit(1000),
-    supabase.from("transaksi_hold").select("*").limit(3000),
-    supabase.from("transaksi_masuk").select("*").limit(10000),
+  const [
+    s,
+    sl,
+    b,
+    k,
+    st,
+    kg,
+    h,
+    m,
+  ] = await Promise.all([
+    fetchAllRows("stock_live"),
+    fetchAllRows("master_kedatangan"),
+    fetchAllRows("bonan_ppic"),
+    fetchAllRows("transaksi_keluar"),
+    fetchAllRows("transaksi_sto"),
+    fetchAllRows("kapasitas_gudang"),
+    fetchAllRows("transaksi_hold"),
+    fetchAllRows("transaksi_masuk"),
   ]);
 
-  setStock(s.data || []);
-  setService(sl.data || []);
-  setBonan(b.data || []);
-  setKeluar(k.data || []);
-  setSto(st.data || []);
-  setKapasitas(kg.data || []);
-  setHold(h.data || []);
-  setMasuk(m.data || []);
+  setStock(s);
+  setService(sl);
+  setBonan(b);
+  setKeluar(k);
+  setSto(st);
+  setKapasitas(kg);
+  setHold(h);
+  setMasuk(m);
 }
   
   function matchSearch(row: any) {
