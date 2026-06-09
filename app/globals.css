@@ -690,26 +690,41 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
   background:var(--surface2);
 }
 
-.jalur-info-col{
+.jalur-date-in-col{
   left:0;
+  min-width:105px;
+  width:105px;
+  max-width:105px;
+  text-align:center !important;
+}
+
+.jalur-info-col{
+  left:105px;
   min-width:300px;
   width:300px;
   max-width:300px;
 }
 
 .jalur-awal-col{
-  left:300px;
+  left:405px;
   min-width:145px;
   width:145px;
   max-width:145px;
 }
 
 .jalur-akhir-col{
-  left:445px;
+  left:550px;
   min-width:145px;
   width:145px;
   max-width:145px;
   box-shadow:10px 0 18px rgba(0,0,0,.16);
+}
+
+.jalur-date-in{
+  font-size:11px;
+  font-weight:900;
+  color:var(--gold);
+  white-space:normal;
 }
 
 .jalur-detail-col{
@@ -1514,25 +1529,33 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
     min-width: 880px;
   }
 
-  .jalur-info-col {
-    min-width: 220px;
-    width: 220px;
-    max-width: 220px;
-  }
+  .jalur-date-in-col{
+  left:0;
+  min-width:90px;
+  width:90px;
+  max-width:90px;
+}
 
-  .jalur-awal-col {
-    left: 220px;
-    min-width: 115px;
-    width: 115px;
-    max-width: 115px;
-  }
+.jalur-info-col{
+  left:90px;
+  min-width:230px;
+  width:230px;
+  max-width:230px;
+}
 
-  .jalur-akhir-col {
-    left: 335px;
-    min-width: 115px;
-    width: 115px;
-    max-width: 115px;
-  }
+.jalur-awal-col{
+  left:320px;
+  min-width:115px;
+  width:115px;
+  max-width:115px;
+}
+
+.jalur-akhir-col{
+  left:435px;
+  min-width:115px;
+  width:115px;
+  max-width:115px;
+}
 
   .jalur-detail-col {
     min-width: 380px;
