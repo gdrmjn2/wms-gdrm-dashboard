@@ -397,27 +397,31 @@ const stokJalurView = useMemo(() => {
   const keluarBySkuQr: any = {};
 
   keluar.forEach((r: any) => {
-    const key = String(r.sku_qr || "");
+  const key = String(r.sku_qr || "").trim();
 
-    if (!key) return;
+  if (!key) return;
 
-    if (!keluarBySkuQr[key]) {
-      keluarBySkuQr[key] = [];
-    }
+  const okPlantKeluar =
+    plant === "ALL" || String(r.plant_tujuan || "") === plant;
 
-    keluarBySkuQr[key].push({
-      tanggal: r.tanggal,
-      jam: r.jam,
-      plant_tujuan: r.plant_tujuan,
-      no_palet: r.no_palet,
-      qty_kemasan: Number(r.qty_kemasan || 0),
-      qty_kg: Number(r.qty_kg || 0),
-    });
+  if (!okPlantKeluar) return;
+
+  if (!keluarBySkuQr[key]) {
+    keluarBySkuQr[key] = [];
+  }
+
+  keluarBySkuQr[key].push({
+    tanggal: r.tanggal,
+    jam: r.jam,
+    plant_tujuan: r.plant_tujuan,
+    no_palet: r.no_palet,
+    qty_kemasan: Number(r.qty_kemasan || 0),
+    qty_kg: Number(r.qty_kg || 0),
   });
+});
 
   const masukFiltered = masuk.filter((r: any) => {
-  const okPlant =
-    plant === "ALL" || String(r.plant) === plant;
+  const okPlant = true;
 
   const rowDate = r.tanggal_kedatangan
     ? String(r.tanggal_kedatangan).slice(0, 10)
