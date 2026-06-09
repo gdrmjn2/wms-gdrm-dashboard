@@ -494,7 +494,7 @@ const stokJalurView = useMemo(() => {
     movementByKey[key].push(d);
   }
 
-  // 1. DATA_RM_KELUAR = keluar / pemakaian dari plant tujuan
+  // DATA_RM_KELUAR = keluar dari plant pemilik / plant_tujuan
   keluar.forEach((r: any) => {
     const skuQr = String(r.sku_qr || "").trim();
 
@@ -518,7 +518,7 @@ const stokJalurView = useMemo(() => {
     });
   });
 
-  // 2. DATA_STO = keluar dari plant asal
+  // DATA_STO = keluar dari plant asal
   sto.forEach((r: any) => {
     const skuQr = String(r.sku_qr || "").trim();
 
@@ -596,7 +596,7 @@ const stokJalurView = useMemo(() => {
     return okPlant && okDate && okSku && okMerk && okBatch;
   }
 
-  // 3. DATA_RM_MASUK = kedatangan asli
+  // DATA_RM_MASUK = masuk asli, dipisah plant + sku_qr
   masuk.forEach((r: any) => {
     const skuQr = String(r.sku_qr || "").trim();
 
@@ -617,7 +617,7 @@ const stokJalurView = useMemo(() => {
     group[key].masuk_kg += Number(row.qty_kg || 0);
   });
 
-  // 4. DATA_STO = kedatangan baru di plant tujuan
+  // DATA_STO = masuk baru ke plant tujuan, SKU QR tetap sama
   sto.forEach((r: any) => {
     const skuQr = String(r.sku_qr || "").trim();
 
@@ -646,7 +646,7 @@ const stokJalurView = useMemo(() => {
     group[key].masuk_kg += Number(r.qty_kg || 0);
   });
 
-  // 5. Hitung running stock per plant + sku_qr
+  // Hitung running stock per plant + sku_qr
   Object.values(group).forEach((item: any) => {
     const details = [...(movementByKey[item.key] || [])].sort(
       (a: any, b: any) => {
