@@ -186,12 +186,20 @@ async function loadAll() {
     return Object.values(group);
   }, [stockFiltered]);
 
+  
+  const stockAlertBase = stock.filter((r: any) => {
+  const okPlant =
+    plant === "ALL" || String(r.plant) === plant;
+
+  return okPlant;
+});
+  
   const alerts = useMemo(() => {
   const today = new Date();
   const a: any[] = [];
 
   // 1. LIFETIME & EXPIRED dari DATA_STOK_GDRM / stock_live
-  stockFiltered.forEach((r) => {
+  stockAlertBase.forEach((r) => {
     const tanggalDatang = r.tanggal_kedatangan
       ? String(r.tanggal_kedatangan).slice(0, 10)
       : "";
@@ -330,7 +338,7 @@ async function loadAll() {
   });
 
   return Array.from(unique.values());
-}, [stockFiltered, hold, plant]);
+}, [stockAlertBase, hold, plant]);
 
   
   const stockView     = stockFiltered.filter(matchSearch);
