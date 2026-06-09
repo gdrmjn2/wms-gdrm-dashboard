@@ -414,8 +414,20 @@ function dateKey_(v: any) {
   return String(v).slice(0, 10);
 }
 
+function cleanPlant(v: any) {
+  return String(v || "")
+    .trim()
+    .replace(/\s+/g, "");
+}
+
+function cleanSkuQr(v: any) {
+  return String(v || "")
+    .trim()
+    .replace(/\s+/g, "");
+}
+
 function jalurKey(plantValue: any, skuQr: any) {
-  return `${String(plantValue || "").trim()}|${String(skuQr || "").trim()}`;
+  return `${cleanPlant(plantValue)}|${cleanSkuQr(skuQr)}`;
 }
 
 function findMasukBySkuQr(skuQr: any) {
@@ -522,10 +534,10 @@ const stokJalurView = useMemo(() => {
     return okPlant && okDate && okSku && okMerk && okBatch;
   }
 
-  // DATA_RM_KELUAR = mengurangi plant pemilik / plant_tujuan + sku_qr
+ // DATA_RM_KELUAR = mengurangi plant pemilik / plant_tujuan + sku_qr
 keluar.forEach((r: any) => {
-  const skuQr = String(r.sku_qr || "").trim();
-  const plantOwner = String(r.plant_tujuan || "").trim();
+  const skuQr = cleanSkuQr(r.sku_qr);
+  const plantOwner = cleanPlant(r.plant_tujuan);
 
   if (!skuQr || !plantOwner) return;
 
@@ -533,8 +545,10 @@ keluar.forEach((r: any) => {
 
   pushMovement(key, {
     jenis: "KELUAR",
+    key_debug: key,
+    sku_qr: skuQr,
     tanggal: r.tanggal,
-    jam: r.jam,
+    jam: r.jam || "00:00:00",
     plant_tujuan: plantOwner,
     no_palet: r.no_palet,
     qty_kemasan: Number(r.qty_kemasan || 0),
@@ -544,9 +558,9 @@ keluar.forEach((r: any) => {
 
  // DATA_STO = mengurangi plant asal + sku_qr
 sto.forEach((r: any) => {
-  const skuQr = String(r.sku_qr || "").trim();
-  const plantAsal = String(r.plant_asal || "").trim();
-  const plantTujuan = String(r.plant_tujuan || "").trim();
+  const skuQr = cleanSkuQr(r.sku_qr);
+  const plantAsal = cleanPlant(r.plant_asal);
+  const plantTujuan = cleanPlant(r.plant_tujuan);
 
   if (!skuQr || !plantAsal) return;
 
@@ -554,8 +568,10 @@ sto.forEach((r: any) => {
 
   pushMovement(key, {
     jenis: "STO OUT",
+    key_debug: key,
+    sku_qr: skuQr,
     tanggal: r.tanggal,
-    jam: "",
+    jam: "00:00:00",
     plant_tujuan: plantTujuan,
     no_palet: "STO",
     qty_kemasan: Number(r.qty_zakkemasan || 0),
@@ -591,18 +607,19 @@ sto.forEach((r: any) => {
 
   // DATA_RM_MASUK = satu-satunya stock awal
   masuk.forEach((r: any) => {
-    const skuQr = String(r.sku_qr || "").trim();
+  const skuQr = cleanSkuQr(r.sku_qr);
 
-    if (!skuQr) return;
+  if (!skuQr) return;
 
-    const row = {
-      ...r,
-      sku_qr: skuQr,
-    };
+  const row = {
+    ...r,
+    plant: cleanPlant(r.plant),
+    sku_qr: skuQr,
+  };
 
-    if (!passFilter(row)) return;
+  if (!passFilter(row)) return;
 
-    const key = jalurKey(row.plant, skuQr);
+  const key = jalurKey(row.plant, skuQr);
 
     ensureGroup(key, row);
 
