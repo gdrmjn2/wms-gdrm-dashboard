@@ -1794,3 +1794,34 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
     min-width:1080px;
   }
 }
+
+/* FILTER MINUS STOK JALUR */
+
+.jalur-minus-filter{
+  min-width:150px;
+}
+
+.jalur-minus-btn{
+  height:34px;
+  padding:0 14px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--surface2);
+  color:var(--muted);
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+  transition:.15s ease;
+}
+
+.jalur-minus-btn:hover{
+  border-color:var(--red);
+  color:var(--red);
+}
+
+.jalur-minus-btn.active{
+  background:rgba(248,113,113,.16);
+  border-color:var(--red);
+  color:var(--red);
+  box-shadow:0 0 0 3px rgba(248,113,113,.10);
+}
