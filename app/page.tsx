@@ -122,8 +122,9 @@ const [unlocked, setUnlocked] = useState(() => {
   const [jalurVariant, setJalurVariant] = useState("ALL");
   const [jalurSku, setJalurSku] = useState("ALL");
   const [jalurMerk, setJalurMerk] = useState("ALL");
-  const [jalurBatch, setJalurBatch] = useState("");
-  const [jalurDetail, setJalurDetail] = useState<any | null>(null);
+const [jalurBatch, setJalurBatch] = useState("");
+const [jalurMinusOnly, setJalurMinusOnly] = useState(false);
+const [jalurDetail, setJalurDetail] = useState<any | null>(null);
   
   const [stock, setStock] = useState<any[]>([]);
   const [service, setService] = useState<any[]>([]);
@@ -722,7 +723,9 @@ sto.forEach((r: any) => {
     item.sisa_kg = runningKg;
   });
 
-  return Object.values(group).filter(matchSearch);
+  return Object.values(group)
+  .filter((r: any) => !jalurMinusOnly || Number(r.sisa_pcs || 0) < 0)
+  .filter(matchSearch);
 }, [
   masuk,
   keluar,
@@ -733,7 +736,8 @@ sto.forEach((r: any) => {
   jalurSku,
   jalurMerk,
   jalurBatch,
-  search,
+jalurMinusOnly,
+search,
 ]);
 
 const jalurDates = useMemo(() => {
@@ -1657,19 +1661,21 @@ function logout() {
             {menu === "Bonan PPIC"    && <BonanTable   rows={bonanView} keluar={keluar} />}
             {menu === "Stok Jalur" && (
   <StokJalurTable
-    rows={stokJalurView}
-    dates={jalurDates}
-    jalurSku={jalurSku}
-    setJalurSku={setJalurSku}
-    jalurMerk={jalurMerk}
-    setJalurMerk={setJalurMerk}
-    jalurBatch={jalurBatch}
-    setJalurBatch={setJalurBatch}
-    skuOptions={jalurSkuOptions}
-    merkOptions={jalurMerkOptions}
-    jalurDetail={jalurDetail}
-    setJalurDetail={setJalurDetail}
-  />
+  rows={stokJalurView}
+  dates={jalurDates}
+  jalurSku={jalurSku}
+  setJalurSku={setJalurSku}
+  jalurMerk={jalurMerk}
+  setJalurMerk={setJalurMerk}
+  jalurBatch={jalurBatch}
+  setJalurBatch={setJalurBatch}
+  jalurMinusOnly={jalurMinusOnly}
+  setJalurMinusOnly={setJalurMinusOnly}
+  skuOptions={jalurSkuOptions}
+  merkOptions={jalurMerkOptions}
+  jalurDetail={jalurDetail}
+  setJalurDetail={setJalurDetail}
+/>
 )}
           </div>
         </div>
@@ -2227,6 +2233,8 @@ function StokJalurTable({
   setJalurMerk,
   jalurBatch,
   setJalurBatch,
+  jalurMinusOnly,
+  setJalurMinusOnly,
   skuOptions,
   merkOptions,
   jalurDetail,
@@ -2279,6 +2287,16 @@ function StokJalurTable({
             onChange={(e) => setJalurBatch(e.target.value)}
           />
         </div>
+        <div className="jalur-filter jalur-minus-filter">
+  <span className="muted sm">Status</span>
+  <button
+    type="button"
+    className={`jalur-minus-btn${jalurMinusOnly ? " active" : ""}`}
+    onClick={() => setJalurMinusOnly(!jalurMinusOnly)}
+  >
+    {jalurMinusOnly ? "Minus Aktif" : "Tampilkan Minus"}
+  </button>
+</div>
       </div>
 
       <div className="jalur-scroll">
