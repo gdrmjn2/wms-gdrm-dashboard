@@ -106,6 +106,40 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
 /* ─────────────────────────────────────────────
    MAIN DASHBOARD
 ───────────────────────────────────────────── */
+function getBonanTerkirimAuto(row: any, keluarList: any[]) {
+  const tglBon = row.tanggal ? String(row.tanggal).slice(0, 10) : "";
+  const plantBon = String(row.plant || "").trim();
+  const skuBon = String(row.sku || "").trim();
+
+  const rowsKeluar = keluarList.filter((k: any) => {
+    const tglKeluar = k.tanggal ? String(k.tanggal).slice(0, 10) : "";
+    const plantKeluar = String(k.plant_tujuan || "").trim();
+    const skuKeluar = String(k.sku_rm || "").trim();
+
+    return (
+      tglKeluar === tglBon &&
+      plantKeluar === plantBon &&
+      skuKeluar === skuBon
+    );
+  });
+
+  const pcs = rowsKeluar.reduce(
+    (a: number, b: any) => a + Number(b.qty_kemasan || 0),
+    0
+  );
+
+  const kg = rowsKeluar.reduce(
+    (a: number, b: any) => a + Number(b.qty_kg_netto || 0),
+    0
+  );
+
+  return {
+    pcs,
+    kg,
+    rows: rowsKeluar,
+  };
+}
+
 export default function Home() {
 const [unlocked, setUnlocked] = useState(() => {
   if (typeof window === "undefined") return false;
@@ -964,8 +998,9 @@ function downloadBonanExcelPerPlant() {
 
       item.bon_pcs += Number(r.qty_bon_zak || 0);
       item.bon_kg += Number(r.qty_bon_kg || 0);
-      item.terkirim_pcs += Number(r.qty_terkirim_pcs || 0);
-      item.terkirim_kg += Number(r.qty_terkirim_kg || 0);
+      const terkirim = getBonanTerkirimAuto(r, keluar);
+item.terkirim_pcs += Number(terkirim.pcs || 0);
+item.terkirim_kg += Number(terkirim.kg || 0);
 
       if (r.note) item.note = r.note;
     });
@@ -1397,8 +1432,10 @@ function downloadCurrentDataPDF() {
     body = bonanView.map((r: any) => {
       const bonPcs = Number(r.qty_bon_zak || 0);
       const bonKg = Number(r.qty_bon_kg || 0);
-      const kirimPcs = Number(r.qty_terkirim_pcs || 0);
-      const kirimKg = Number(r.qty_terkirim_kg || 0);
+      const terkirim = getBonanTerkirimAuto(r, keluar);
+
+const kirimPcs = Number(terkirim.pcs || 0);
+const kirimKg = Number(terkirim.kg || 0);
 
       const persenPcs = bonPcs ? (kirimPcs / bonPcs) * 100 : 0;
       const persenKg = bonKg ? (kirimKg / bonKg) * 100 : 0;
@@ -2091,7 +2128,7 @@ function ServiceTable({ rows }: any) {
   );
 }
 
-function BonanTable({ rows }: any) {
+function BonanTable({ rows, keluar }: any) {
 
   return (
 
@@ -2121,11 +2158,10 @@ function BonanTable({ rows }: any) {
         const bonKg =
           Number(r.qty_bon_kg || 0);
 
-        const kirimPcs =
-          Number(r.qty_terkirim_pcs || 0);
+        const terkirim = getBonanTerkirimAuto(r, keluar);
 
-        const kirimKg =
-          Number(r.qty_terkirim_kg || 0);
+const kirimPcs = terkirim.pcs;
+const kirimKg = terkirim.kg;
 
         const persenPcs =
           bonPcs
