@@ -149,8 +149,9 @@ const [unlocked, setUnlocked] = useState(() => {
   const [dark, setDark] = useState(true);
   const [menu, setMenu] = useState("Stock Ready");
   const [alertFilter, setAlertFilter] = useState("ALL");
-  const [plant, setPlant] = useState("ALL");
-  const [search, setSearch] = useState("");
+const [bonanStatusFilter, setBonanStatusFilter] = useState("ALL");
+const [plant, setPlant] = useState("ALL");
+const [search, setSearch] = useState("");
 
   const [masuk, setMasuk] = useState<any[]>([]);
   const [jalurVariant, setJalurVariant] = useState("ALL");
@@ -460,7 +461,22 @@ async function loadAll() {
 
     return okPlant && okDate;
   })
+  .filter((r: any) => {
+    if (bonanStatusFilter === "ALL") return true;
+
+    const bonPcs = Number(r.qty_bon_zak || 0);
+    const terkirim = getBonanTerkirimAuto(r, keluar);
+    const kirimPcs = Number(terkirim.pcs || 0);
+
+    const selesai = bonPcs > 0 && kirimPcs >= bonPcs;
+
+    if (bonanStatusFilter === "SELESAI") return selesai;
+    if (bonanStatusFilter === "BELUM") return !selesai;
+
+    return true;
+  })
   .filter(matchSearch);
+  
   const kapasitasView = kapasitas.filter(matchSearch);
 
  function getSkuVariant(row: any) {
@@ -1695,7 +1711,14 @@ function logout() {
 )}
             {menu === "Kapasitas"     && <KapasitasTable rows={kapasitasView} stock={stockView} />}
             {menu === "Service Level" && <ServiceTable rows={serviceView} />}
-            {menu === "Bonan PPIC"    && <BonanTable   rows={bonanView} keluar={keluar} />}
+            {menu === "Bonan PPIC" && (
+  <BonanTable
+    rows={bonanView}
+    keluar={keluar}
+    bonanStatusFilter={bonanStatusFilter}
+    setBonanStatusFilter={setBonanStatusFilter}
+  />
+)}
             {menu === "Stok Jalur" && (
   <StokJalurTable
   rows={stokJalurView}
@@ -2128,139 +2151,112 @@ function ServiceTable({ rows }: any) {
   );
 }
 
-function BonanTable({ rows, keluar }: any) {
-
+function BonanTable({
+  rows,
+  keluar,
+  bonanStatusFilter,
+  setBonanStatusFilter,
+}: any) {
   return (
+    <div className="bonan-wrap">
+      <div className="bonan-filterbar">
+        <button
+          className={`bonan-filter-btn${bonanStatusFilter === "ALL" ? " active" : ""}`}
+          onClick={() => setBonanStatusFilter("ALL")}
+        >
+          Semua
+        </button>
 
-    <Tbl
-      heads={[
-        "Tanggal",
-        "Plant",
-        "SKU",
-        "Nama RM",
-        "Bon PCS",
-        "Bon KG",
-        "Terkirim PCS",
-        "Terkirim KG",
-        "% PCS",
-        "% KG",
-        "Kurang PCS",
-        "Kurang KG",
-        "Note",
-      ]}
-    >
+        <button
+          className={`bonan-filter-btn selesai${bonanStatusFilter === "SELESAI" ? " active" : ""}`}
+          onClick={() => setBonanStatusFilter("SELESAI")}
+        >
+          Selesai Kirim
+        </button>
 
-      {rows.map((r: any, i: number) => {
+        <button
+          className={`bonan-filter-btn belum${bonanStatusFilter === "BELUM" ? " active" : ""}`}
+          onClick={() => setBonanStatusFilter("BELUM")}
+        >
+          Belum Selesai
+        </button>
+      </div>
 
-        const bonPcs =
-          Number(r.qty_bon_zak || 0);
+      <Tbl
+        heads={[
+          "Tanggal",
+          "Plant",
+          "SKU",
+          "Nama RM",
+          "Bon PCS",
+          "Bon KG",
+          "Terkirim PCS",
+          "Terkirim KG",
+          "% PCS",
+          "% KG",
+          "Kurang PCS",
+          "Kurang KG",
+          "Note",
+        ]}
+      >
+        {rows.map((r: any, i: number) => {
+          const bonPcs = Number(r.qty_bon_zak || 0);
+          const bonKg = Number(r.qty_bon_kg || 0);
 
-        const bonKg =
-          Number(r.qty_bon_kg || 0);
+          const terkirim = getBonanTerkirimAuto(r, keluar);
 
-        const terkirim = getBonanTerkirimAuto(r, keluar);
+          const kirimPcs = terkirim.pcs;
+          const kirimKg = terkirim.kg;
 
-const kirimPcs = terkirim.pcs;
-const kirimKg = terkirim.kg;
+          const persenPcs = bonPcs ? (kirimPcs / bonPcs) * 100 : 0;
+          const persenKg = bonKg ? (kirimKg / bonKg) * 100 : 0;
 
-        const persenPcs =
-          bonPcs
-            ? (kirimPcs / bonPcs) * 100
-            : 0;
+          const kurangPcs = bonPcs - kirimPcs;
+          const kurangKg = bonKg - kirimKg;
 
-        const persenKg =
-          bonKg
-            ? (kirimKg / bonKg) * 100
-            : 0;
+          return (
+            <tr key={i}>
+              <td className="muted">{r.tanggal}</td>
 
-        const kurangPcs =
-          bonPcs - kirimPcs;
+              <td>
+                <Badge text={r.plant} variant="blue" />
+              </td>
 
-        const kurangKg =
-          bonKg - kirimKg;
+              <td className="bold">{r.sku}</td>
+              <td>{r.nama_rm}</td>
 
-        return (
+              <td className="num blue">{fmt0(bonPcs)}</td>
+              <td className="num blue">{fmt2(bonKg)}</td>
 
-          <tr key={i}>
+              <td className="num green">{fmt0(kirimPcs)}</td>
+              <td className="num green">{fmt2(kirimKg)}</td>
 
-            <td className="muted">
-              {r.tanggal}
-            </td>
+              <td className="num">{fmt2(persenPcs)}%</td>
+              <td className="num">{fmt2(persenKg)}%</td>
 
-            <td>
-              <Badge
-                text={r.plant}
-                variant="blue"
-              />
-            </td>
+              <td>
+                <Badge
+                  text={fmt0(kurangPcs)}
+                  variant={kurangPcs > 0 ? "kurang" : "aman"}
+                />
+              </td>
 
-            <td className="bold">
-              {r.sku}
-            </td>
+              <td>
+                <Badge
+                  text={fmt2(kurangKg)}
+                  variant={kurangKg > 0 ? "kurang" : "aman"}
+                />
+              </td>
 
-            <td>
-              {r.nama_rm}
-            </td>
-
-            <td className="num blue">
-              {fmt0(bonPcs)}
-            </td>
-
-            <td className="num blue">
-              {fmt2(bonKg)}
-            </td>
-
-            <td className="num green">
-              {fmt0(kirimPcs)}
-            </td>
-
-            <td className="num green">
-              {fmt2(kirimKg)}
-            </td>
-
-            <td className="num">
-              {fmt2(persenPcs)}%
-            </td>
-
-            <td className="num">
-              {fmt2(persenKg)}%
-            </td>
-
-            <td>
-              <Badge
-                text={fmt0(kurangPcs)}
-                variant={
-                kurangPcs > 0
-                ? "kurang"
-                : "aman"
-}
-              />
-            </td>
-
-            <td>
-              <Badge
-                text={fmt2(kurangKg)}
-                variant={
-  kurangKg > 0
-    ? "kurang"
-    : "aman"
-}
-              />
-            </td>
-
-            <td className="muted">
-              {r.note || "-"}
-            </td>
-
-          </tr>
-
-        );
-      })}
-
-    </Tbl>
-
+              <td className="muted">{r.note || "-"}</td>
+            </tr>
+          );
+        })}
+      </Tbl>
+    </div>
   );
 }
+
 function StokJalurTable({
   rows,
   jalurSku,
