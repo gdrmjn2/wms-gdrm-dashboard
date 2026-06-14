@@ -1936,3 +1936,259 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
 .kapasitas-rack.rack-over .rack-fill{
   background:linear-gradient(90deg,#450a0a,#991b1b);
 }
+
+/* KAPASITAS DENAH SIMPLE */
+
+.kapasitas-denah-wrap{
+  padding:18px;
+}
+
+.kapasitas-legend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:14px;
+}
+
+.legend-item{
+  font-size:11px;
+  font-weight:900;
+  padding:7px 10px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:var(--surface2);
+}
+
+.legend-item.safe{
+  color:#22c55e;
+  border-color:rgba(34,197,94,.45);
+}
+
+.legend-item.warning{
+  color:#eab308;
+  border-color:rgba(234,179,8,.55);
+}
+
+.legend-item.danger{
+  color:#ef4444;
+  border-color:rgba(239,68,68,.60);
+}
+
+.legend-item.over{
+  color:#991b1b;
+  border-color:rgba(127,29,29,.80);
+}
+
+.kapasitas-denah{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:18px;
+  align-items:start;
+}
+
+.kapasitas-zone{
+  min-height:520px;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:22px;
+  background:linear-gradient(180deg,rgba(15,23,42,.75),rgba(2,6,23,.55));
+}
+
+.zone-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:flex-end;
+  margin-bottom:12px;
+  padding-bottom:10px;
+  border-bottom:1px solid var(--border);
+}
+
+.zone-head b{
+  font-size:13px;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  color:var(--text);
+}
+
+.zone-head span{
+  font-size:11px;
+  color:var(--muted);
+  font-weight:800;
+}
+
+.zone-stack{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.kapasitas-map-card{
+  width:100%;
+  min-height:148px;
+  text-align:left;
+  padding:16px;
+  border-radius:18px;
+  cursor:pointer;
+  overflow:hidden;
+}
+
+.kapasitas-map-card .rack-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+.kapasitas-map-card .rack-top span{
+  font-size:10px;
+  font-weight:1000;
+  letter-spacing:.16em;
+  color:var(--muted);
+}
+
+.kapasitas-map-card .rack-top b{
+  font-size:24px;
+  color:#fbbf24;
+  white-space:nowrap;
+}
+
+.rack-category{
+  margin-top:4px;
+  font-size:11px;
+  color:var(--muted);
+  font-weight:800;
+  min-height:16px;
+}
+
+.kapasitas-map-card .rack-body{
+  margin-top:14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+}
+
+.kapasitas-map-card .rack-percent{
+  font-size:34px;
+  line-height:1;
+  font-weight:1000;
+  letter-spacing:.02em;
+}
+
+.kapasitas-map-card .rack-status{
+  font-size:11px;
+  font-weight:1000;
+  padding:6px 9px;
+  border-radius:999px;
+  background:rgba(15,23,42,.55);
+  white-space:nowrap;
+}
+
+.kapasitas-map-card .rack-bar{
+  height:10px;
+  margin-top:16px;
+  border-radius:999px;
+  background:rgba(148,163,184,.18);
+  overflow:hidden;
+}
+
+.kapasitas-map-card .rack-fill{
+  height:100%;
+  border-radius:999px;
+}
+
+.kapasitas-map-card .rack-foot{
+  margin-top:12px;
+  display:flex;
+  justify-content:space-between;
+  font-size:11px;
+  color:var(--muted);
+  font-weight:900;
+}
+
+/* KAPASITAS COLOR STANDARD */
+
+.kapasitas-rack.rack-safe{
+  border-color:rgba(34,197,94,.45);
+  background:linear-gradient(180deg,rgba(34,197,94,.18),rgba(22,163,74,.08));
+}
+
+.kapasitas-rack.rack-safe .rack-percent,
+.kapasitas-rack.rack-safe .rack-status{
+  color:#22c55e;
+}
+
+.kapasitas-rack.rack-safe .rack-fill{
+  background:linear-gradient(90deg,#16a34a,#22c55e);
+}
+
+.kapasitas-rack.rack-warning{
+  border-color:rgba(234,179,8,.55);
+  background:linear-gradient(180deg,rgba(234,179,8,.20),rgba(202,138,4,.08));
+}
+
+.kapasitas-rack.rack-warning .rack-percent,
+.kapasitas-rack.rack-warning .rack-status{
+  color:#eab308;
+}
+
+.kapasitas-rack.rack-warning .rack-fill{
+  background:linear-gradient(90deg,#ca8a04,#eab308);
+}
+
+.kapasitas-rack.rack-danger{
+  border-color:rgba(239,68,68,.60);
+  background:linear-gradient(180deg,rgba(239,68,68,.22),rgba(220,38,38,.10));
+}
+
+.kapasitas-rack.rack-danger .rack-percent,
+.kapasitas-rack.rack-danger .rack-status{
+  color:#ef4444;
+}
+
+.kapasitas-rack.rack-danger .rack-fill{
+  background:linear-gradient(90deg,#dc2626,#ef4444);
+}
+
+.kapasitas-rack.rack-over{
+  border-color:rgba(127,29,29,.85);
+  background:linear-gradient(180deg,rgba(127,29,29,.35),rgba(69,10,10,.22));
+  box-shadow:0 0 0 2px rgba(127,29,29,.25), 0 18px 40px rgba(127,29,29,.25);
+}
+
+.kapasitas-rack.rack-over .rack-percent,
+.kapasitas-rack.rack-over .rack-status{
+  color:#991b1b;
+  font-weight:1000;
+}
+
+.kapasitas-rack.rack-over .rack-fill{
+  background:linear-gradient(90deg,#450a0a,#991b1b);
+}
+
+/* RESPONSIVE KAPASITAS */
+
+@media (max-width:1100px){
+  .kapasitas-denah{
+    grid-template-columns:1fr;
+  }
+
+  .kapasitas-zone{
+    min-height:auto;
+  }
+}
+
+@media (max-width:640px){
+  .kapasitas-denah-wrap{
+    padding:12px;
+  }
+
+  .kapasitas-map-card .rack-top b{
+    font-size:20px;
+  }
+
+  .kapasitas-map-card .rack-percent{
+    font-size:28px;
+  }
+}
