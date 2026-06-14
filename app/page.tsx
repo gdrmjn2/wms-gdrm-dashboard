@@ -1994,9 +1994,14 @@ function KapasitasTable({ rows, stock }: any) {
           const kapasitas = Number(r.kapasitas || 0);
           const isi = Number(r.isi || totalKemasan || 0);
 
-          const pct =
-            Number(String(r.persen || "").replace("%", "")) ||
-            (kapasitas ? Math.round((isi / kapasitas) * 100) : 0);
+          let pctRaw =
+  Number(String(r.persen || "").replace("%", "")) ||
+  (kapasitas ? (isi / kapasitas) * 100 : 0);
+
+const pct =
+  pctRaw > 0 && pctRaw <= 1
+    ? pctRaw * 100
+    : pctRaw;
 
           const status =
   pct > 100
@@ -2039,7 +2044,7 @@ const level =
   <b>{blokLabel(r.lokasi)}</b>
 </div>
               <div className="rack-body">
-                <div className="rack-percent">{pct}%</div>
+                <div className="rack-percent">{fmt2(pct)}%</div>
                 <div className="rack-status">{status}</div>
               </div>
 
