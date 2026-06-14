@@ -1942,6 +1942,15 @@ function KapasitasTable({ rows, stock }: any) {
       .trim()
       .toUpperCase();
   }
+  function blokLabel(v: any) {
+  const s = String(v || "").trim();
+
+  if (!s) return "Blok -";
+
+  return s.toLowerCase().startsWith("blok")
+    ? s
+    : `Blok ${s}`;
+}
 
   function stockInLokasi(lokasi: any) {
     const lok = norm(lokasi);
@@ -1990,22 +1999,22 @@ function KapasitasTable({ rows, stock }: any) {
             (kapasitas ? Math.round((isi / kapasitas) * 100) : 0);
 
           const status =
-            pct >= 100
-              ? "FULL"
-              : pct >= 80
-              ? "PADAT"
-              : pct >= 60
-              ? "SEDANG"
-              : "AMAN";
+  pct > 100
+    ? "OVER KAPASITAS"
+    : pct > 90
+    ? "KRITIS"
+    : pct > 60
+    ? "WASPADA"
+    : "AMAN";
 
-          const level =
-            pct >= 100
-              ? "full"
-              : pct >= 80
-              ? "high"
-              : pct >= 60
-              ? "mid"
-              : "low";
+const level =
+  pct > 100
+    ? "over"
+    : pct > 90
+    ? "danger"
+    : pct > 60
+    ? "warning"
+    : "safe";
 
           return (
             <button
@@ -2026,10 +2035,9 @@ function KapasitasTable({ rows, stock }: any) {
               }
             >
               <div className="rack-top">
-                <span>Lokasi</span>
-                <b>{r.lokasi}</b>
-              </div>
-
+  <span>Area</span>
+  <b>{blokLabel(r.lokasi)}</b>
+</div>
               <div className="rack-body">
                 <div className="rack-percent">{pct}%</div>
                 <div className="rack-status">{status}</div>
@@ -2064,7 +2072,7 @@ function KapasitasTable({ rows, stock }: any) {
           >
             <div className="kapasitas-modal-head">
               <div>
-                <h3>Lokasi {selected.lokasi}</h3>
+                <h3>{blokLabel(selected.lokasi)}</h3>
                 <p>
                   Status {selected.status} · Penggunaan {selected.persen}%
                 </p>
