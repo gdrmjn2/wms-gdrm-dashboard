@@ -1942,15 +1942,58 @@ function KapasitasTable({ rows, stock }: any) {
       .trim()
       .toUpperCase();
   }
+
   function blokLabel(v: any) {
-  const s = String(v || "").trim();
+    const s = String(v || "").trim();
 
-  if (!s) return "Blok -";
+    if (!s) return "Blok -";
 
-  return s.toLowerCase().startsWith("blok")
-    ? s
-    : `Blok ${s}`;
-}
+    if (s.toLowerCase().startsWith("blok")) return s;
+    if (s.toLowerCase().includes("bubuk")) return "Penyimpanan Bubuk";
+
+    return `Blok ${s}`;
+  }
+
+  function getPctLevel(pct: number) {
+    if (pct > 100) {
+      return {
+        level: "over",
+        status: "OVER KAPASITAS",
+      };
+    }
+
+    if (pct > 90) {
+      return {
+        level: "danger",
+        status: "KRITIS",
+      };
+    }
+
+    if (pct > 60) {
+      return {
+        level: "warning",
+        status: "WASPADA",
+      };
+    }
+
+    return {
+      level: "safe",
+      status: "AMAN",
+    };
+  }
+
+  function normalizePercent(v: any, isi: number, kapasitas: number) {
+    const raw = Number(String(v || "").replace("%", ""));
+
+    let pct =
+      raw || (kapasitas ? (isi / kapasitas) * 100 : 0);
+
+    if (pct > 0 && pct <= 1) {
+      pct = pct * 100;
+    }
+
+    return pct;
+  }
 
   function stockInLokasi(lokasi: any) {
     const lok = norm(lokasi);
@@ -1967,103 +2010,209 @@ function KapasitasTable({ rows, stock }: any) {
     });
   }
 
-  const sortedRows = [...rows].sort((a: any, b: any) =>
-    String(a.lokasi || "").localeCompare(String(b.lokasi || ""), "id", {
-      numeric: true,
-    })
-  );
+  const blockMeta = [
+    {
+      key: "H",
+      title: "Blok H",
+      category: "Non Allergen Tapioka",
+      area: "AREA KIRI",
+      col: "left",
+    },
+    {
+      key: "G",
+      title: "Blok G",
+      category: "Non Allergen Gula",
+      area: "AREA KIRI",
+      col: "left",
+    },
+    {
+      key: "BUBUK",
+      title: "Penyimpanan Bubuk",
+      category: "Area Bubuk",
+      area: "AREA KIRI",
+      col: "left",
+    },
+
+    {
+      key: "F",
+      title: "Blok F",
+      category: "Non Allergen",
+      area: "AREA TENGAH",
+      col: "middle",
+    },
+    {
+      key: "E",
+      title: "Blok E",
+      category: "Allergen Treenut, Susu, Sulfit",
+      area: "AREA TENGAH",
+      col: "middle",
+    },
+    {
+      key: "D",
+      title: "Blok D",
+      category: "Raw Material KITE",
+      area: "AREA TENGAH",
+      col: "middle",
+    },
+
+    {
+      key: "C",
+      title: "Blok C",
+      category: "Non Allergen",
+      area: "AREA KANAN",
+      col: "right",
+    },
+    {
+      key: "B",
+      title: "Blok B",
+      category: "Allergen Non Spesifik",
+      area: "AREA KANAN",
+      col: "right",
+    },
+    {
+      key: "A",
+      title: "Blok A",
+      category: "Allergen Soya",
+      area: "AREA KANAN",
+      col: "right",
+    },
+  ];
+
+  const rowsMap = new Map<string, any>();
+
+  rows.forEach((r: any) => {
+    const lokasi = norm(r.lokasi);
+
+    if (!lokasi) return;
+
+    if (lokasi.includes("BUBUK")) {
+      rowsMap.set("BUBUK", r);
+    } else {
+      rowsMap.set(lokasi, r);
+    }
+  });
+
+  function buildBlock(meta: any) {
+    const r = rowsMap.get(meta.key) || {};
+    const lokasi = meta.key === "BUBUK" ? "PENYIMPANAN BUBUK" : meta.key;
+
+    const isiStock = stockInLokasi(lokasi);
+
+    const totalBatch = isiStock.length;
+
+    const totalKemasan = isiStock.reduce(
+      (a: number, b: any) => a + Number(b.tot_qty_kemasan || 0),
+      0
+    );
+
+    const totalKg = isiStock.reduce(
+      (a: number, b: any) => a + Number(b.tot_qty_kg || 0),
+      0
+    );
+
+    const kapasitas = Number(r.kapasitas || 0);
+    const isi = Number(r.isi || totalKemasan || 0);
+    const pct = normalizePercent(r.persen, isi, kapasitas);
+    const pctInfo = getPctLevel(pct);
+
+    return {
+      ...meta,
+      lokasi,
+      kapasitas,
+      isi,
+      persen: pct,
+      level: pctInfo.level,
+      status: pctInfo.status,
+      totalBatch,
+      totalKemasan,
+      totalKg,
+      items: isiStock,
+    };
+  }
+
+  const blocks = blockMeta.map(buildBlock);
+
+  const columns = [
+    {
+      key: "left",
+      title: "Area Kiri",
+      subtitle: "Tapioka, Gula, Bubuk",
+    },
+    {
+      key: "middle",
+      title: "Area Tengah",
+      subtitle: "F, E, D",
+    },
+    {
+      key: "right",
+      title: "Area Kanan",
+      subtitle: "C, B, A",
+    },
+  ];
 
   return (
-    <div className="kapasitas-wrap">
-      <div className="kapasitas-map">
-        {sortedRows.map((r: any, i: number) => {
-          const isiStock = stockInLokasi(r.lokasi);
+    <div className="kapasitas-denah-wrap">
+      <div className="kapasitas-legend">
+        <span className="legend-item safe">0-60% Aman</span>
+        <span className="legend-item warning">&gt;60-90% Waspada</span>
+        <span className="legend-item danger">&gt;90-100% Kritis</span>
+        <span className="legend-item over">&gt;100% Over</span>
+      </div>
 
-          const totalBatch = isiStock.length;
+      <div className="kapasitas-denah">
+        {columns.map((col) => (
+          <div className="kapasitas-zone" key={col.key}>
+            <div className="zone-head">
+              <b>{col.title}</b>
+              <span>{col.subtitle}</span>
+            </div>
 
-          const totalKemasan = isiStock.reduce(
-            (a: number, b: any) => a + Number(b.tot_qty_kemasan || 0),
-            0
-          );
+            <div className="zone-stack">
+              {blocks
+                .filter((b: any) => b.col === col.key)
+                .map((b: any) => (
+                  <button
+                    key={b.key}
+                    className={`kapasitas-rack kapasitas-map-card rack-${b.level}`}
+                    onClick={() => setSelected(b)}
+                  >
+                    <div className="rack-top">
+                      <span>{b.area}</span>
+                      <b>{b.title}</b>
+                    </div>
 
-          const totalKg = isiStock.reduce(
-            (a: number, b: any) => a + Number(b.tot_qty_kg || 0),
-            0
-          );
+                    <div className="rack-category">
+                      {b.category}
+                    </div>
 
-          const kapasitas = Number(r.kapasitas || 0);
-          const isi = Number(r.isi || totalKemasan || 0);
+                    <div className="rack-body">
+                      <div className="rack-percent">
+                        {fmt2(b.persen)}%
+                      </div>
 
-          let pctRaw =
-  Number(String(r.persen || "").replace("%", "")) ||
-  (kapasitas ? (isi / kapasitas) * 100 : 0);
+                      <div className="rack-status">
+                        {b.status}
+                      </div>
+                    </div>
 
-const pct =
-  pctRaw > 0 && pctRaw <= 1
-    ? pctRaw * 100
-    : pctRaw;
+                    <div className="rack-bar">
+                      <div
+                        className="rack-fill"
+                        style={{
+                          width: `${Math.min(b.persen, 100)}%`,
+                        }}
+                      />
+                    </div>
 
-          const status =
-  pct > 100
-    ? "OVER KAPASITAS"
-    : pct > 90
-    ? "KRITIS"
-    : pct > 60
-    ? "WASPADA"
-    : "AMAN";
-
-const level =
-  pct > 100
-    ? "over"
-    : pct > 90
-    ? "danger"
-    : pct > 60
-    ? "warning"
-    : "safe";
-
-          return (
-            <button
-              key={`${r.lokasi}_${i}`}
-              className={`kapasitas-rack rack-${level}`}
-              onClick={() =>
-                setSelected({
-                  lokasi: r.lokasi,
-                  kapasitas,
-                  isi,
-                  persen: pct,
-                  status,
-                  totalBatch,
-                  totalKemasan,
-                  totalKg,
-                  items: isiStock,
-                })
-              }
-            >
-              <div className="rack-top">
-  <span>Area</span>
-  <b>{blokLabel(r.lokasi)}</b>
-</div>
-              <div className="rack-body">
-                <div className="rack-percent">{fmt2(pct)}%</div>
-                <div className="rack-status">{status}</div>
-              </div>
-
-              <div className="rack-bar">
-                <div
-                  className="rack-fill"
-                  style={{
-                    width: `${Math.min(pct, 100)}%`,
-                  }}
-                />
-              </div>
-
-              <div className="rack-foot">
-                <span>{fmt0(totalBatch)} batch</span>
-                <span>{fmt0(totalKemasan)} pcs</span>
-              </div>
-            </button>
-          );
-        })}
+                    <div className="rack-foot">
+                      <span>{fmt0(b.totalBatch)} batch</span>
+                      <span>{fmt0(b.totalKemasan)} pcs</span>
+                    </div>
+                  </button>
+                ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       {selected && (
@@ -2077,9 +2226,10 @@ const level =
           >
             <div className="kapasitas-modal-head">
               <div>
-                <h3>{blokLabel(selected.lokasi)}</h3>
+                <h3>{selected.title}</h3>
                 <p>
-                  Status {selected.status} · Penggunaan {selected.persen}%
+                  {selected.category} · {selected.status} · Utilisasi{" "}
+                  {fmt2(selected.persen)}%
                 </p>
               </div>
 
@@ -2136,7 +2286,7 @@ const level =
                 ))
               ) : (
                 <div className="kapasitas-empty">
-                  Tidak ada RM stock ready di lokasi ini.
+                  Tidak ada RM stock ready di area ini.
                 </div>
               )}
             </div>
