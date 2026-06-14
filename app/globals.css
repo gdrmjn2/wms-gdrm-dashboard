@@ -1875,3 +1875,64 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
   background:linear-gradient(135deg,#dc2626,#f97316);
   border-color:rgba(249,115,22,.7);
 }
+
+
+/* KAPASITAS COLOR STANDARD */
+
+.kapasitas-rack.rack-safe{
+  border-color:rgba(34,197,94,.45);
+  background:linear-gradient(180deg,rgba(34,197,94,.18),rgba(22,163,74,.08));
+}
+
+.kapasitas-rack.rack-safe .rack-percent,
+.kapasitas-rack.rack-safe .rack-status{
+  color:#22c55e;
+}
+
+.kapasitas-rack.rack-safe .rack-fill{
+  background:linear-gradient(90deg,#16a34a,#22c55e);
+}
+
+.kapasitas-rack.rack-warning{
+  border-color:rgba(234,179,8,.55);
+  background:linear-gradient(180deg,rgba(234,179,8,.20),rgba(202,138,4,.08));
+}
+
+.kapasitas-rack.rack-warning .rack-percent,
+.kapasitas-rack.rack-warning .rack-status{
+  color:#eab308;
+}
+
+.kapasitas-rack.rack-warning .rack-fill{
+  background:linear-gradient(90deg,#ca8a04,#eab308);
+}
+
+.kapasitas-rack.rack-danger{
+  border-color:rgba(239,68,68,.60);
+  background:linear-gradient(180deg,rgba(239,68,68,.22),rgba(220,38,38,.10));
+}
+
+.kapasitas-rack.rack-danger .rack-percent,
+.kapasitas-rack.rack-danger .rack-status{
+  color:#ef4444;
+}
+
+.kapasitas-rack.rack-danger .rack-fill{
+  background:linear-gradient(90deg,#dc2626,#ef4444);
+}
+
+.kapasitas-rack.rack-over{
+  border-color:rgba(127,29,29,.85);
+  background:linear-gradient(180deg,rgba(127,29,29,.35),rgba(69,10,10,.22));
+  box-shadow:0 0 0 2px rgba(127,29,29,.25), 0 18px 40px rgba(127,29,29,.25);
+}
+
+.kapasitas-rack.rack-over .rack-percent,
+.kapasitas-rack.rack-over .rack-status{
+  color:#991b1b;
+  font-weight:1000;
+}
+
+.kapasitas-rack.rack-over .rack-fill{
+  background:linear-gradient(90deg,#450a0a,#991b1b);
+}
