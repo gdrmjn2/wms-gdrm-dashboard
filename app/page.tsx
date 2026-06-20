@@ -367,6 +367,53 @@ async function loadAll() {
         });
       }
     }
+
+    // 3. NORMAL / SEMUA DATA
+// Barang normal = tidak aging dan tidak expired <= 90 hari
+const ageNormal = r.tanggal_kedatangan
+  ? Math.floor(
+      (today.getTime() - new Date(r.tanggal_kedatangan).getTime()) /
+        86400000
+    )
+  : 0;
+
+const expLeftNormal = r.tanggal_expired
+  ? Math.floor(
+      (new Date(r.tanggal_expired).getTime() - today.getTime()) /
+        86400000
+    )
+  : null;
+
+const isAging = ageNormal > 4;
+
+const isExpAlert =
+  expLeftNormal !== null &&
+  expLeftNormal >= 0 &&
+  expLeftNormal <= 90;
+
+if (!isAging && !isExpAlert) {
+  a.push({
+    type: "NORMAL / SEMUA DATA",
+    category: "NORMAL",
+    rm: r.nama_rm,
+    sku: r.sku_rm,
+    merk: r.merk || "-",
+    batch: r.no_batch,
+    qty: r.tot_qty_kemasan,
+    kg: r.tot_qty_kg,
+    plant: r.plant,
+    lokasi: r.lokasi_rm,
+    tanggal_datang: tanggalDatang,
+    tanggal_expired: tanggalExpired,
+    value: expLeftNormal !== null ? expLeftNormal : ageNormal,
+    value_label:
+      expLeftNormal !== null
+        ? `${expLeftNormal} hari lagi`
+        : `${ageNormal} hari`,
+    note: r.note || "",
+    status: "NORMAL",
+  });
+}
   });
 
   // 2. HOLD dari DATA_RM_GANTUNGAN+HOLD / transaksi_hold
@@ -431,7 +478,17 @@ async function loadAll() {
   const fifoView      = fifo.filter(matchSearch);
   const alertView = alerts
   .filter(matchSearch)
-  .filter((r: any) => alertFilter === "ALL" || r.category === alertFilter);
+  .filter((r: any) => {
+    if (alertFilter === "ALL") {
+      return r.category !== "NORMAL";
+    }
+
+    if (alertFilter === "SEMUA") {
+      return true;
+    }
+
+    return r.category === alertFilter;
+  });
   const serviceView = service
   .filter((r) => {
     const okPlant =
@@ -1838,6 +1895,8 @@ function AlertView({
   const exp30 = allRows.filter((r: any) => r.category === "EXP_30");
   const exp60 = allRows.filter((r: any) => r.category === "EXP_60");
   const exp90 = allRows.filter((r: any) => r.category === "EXP_90");
+  const normal = allRows.filter((r: any) => r.category === "NORMAL");
+const semua = allRows;
 
   function toggle(cat: string) {
     setShowAllStock(false);
@@ -1850,7 +1909,7 @@ function AlertView({
     if (cat === "EXP_30") return "EXP <30";
     if (cat === "EXP_60") return "EXP <60";
     if (cat === "EXP_90") return "EXP <90";
-    if (cat === "ALL_STOCK") return "SEMUA BARANG";
+    if (cat === "NORMAL") return "NORMAL";
     return cat;
   }
 
@@ -1900,7 +1959,7 @@ function AlertView({
     };
   });
 
-  const sourceRows = showAllStock ? allStockRows : rows;
+ const sourceRows = rows;
 
   function matchCol(r: any) {
     const data: any = {
@@ -1977,14 +2036,14 @@ function AlertView({
     <div className="alert-table-wrap">
       <div className="alert-summary alert-summary-6">
         <button
-          className={`alert-stat all-stock-stat ${showAllStock ? "active" : ""}`}
-          onClick={() => {
-            setShowAllStock(true);
-            setAlertFilter("ALL");
-          }}
-        >
-          <span>{allStockRows.length}</span>Semua Barang
-        </button>
+  className={`alert-stat all-stock-stat ${alertFilter === "SEMUA" ? "active" : ""}`}
+  onClick={() => {
+    setShowAllStock(false);
+    setAlertFilter("SEMUA");
+  }}
+>
+  <span>{semua.length}</span>Semua Data
+</button>
 
         <button
           className={`alert-stat hold-stat ${!showAllStock && alertFilter === "HOLD" ? "active" : ""}`}
@@ -2024,7 +2083,7 @@ function AlertView({
 
       <div className="alert-toolbar">
         <div>
-          Mode: <b>{showAllStock ? "Semua Barang Gudang" : "Alert Aktif"}</b>
+          Mode: <b>{alertFilter === "SEMUA" ? "Semua Data" : "Alert Aktif"}</b>
           <span className="muted"> · {finalRows.length} baris</span>
         </div>
 
