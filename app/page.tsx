@@ -1702,12 +1702,13 @@ function logout() {
             {menu === "Stock Ready"   && <StockTable   rows={stockView} />}
             {menu === "FIFO Matrix"   && <FIFOTable    rows={fifoView} />}
            {menu === "Alert Center" && (
-  <AlertView
-    rows={alertView}
-    allRows={alerts.filter(matchSearch)}
-    alertFilter={alertFilter}
-    setAlertFilter={setAlertFilter}
-  />
+ <AlertView
+  rows={alertView}
+  allRows={alerts.filter(matchSearch)}
+  stockRows={stockAlertBase.filter(matchSearch)}
+  alertFilter={alertFilter}
+  setAlertFilter={setAlertFilter}
+/>
 )}
             {menu === "Kapasitas"     && <KapasitasTable rows={kapasitasView} stock={stockView} />}
             {menu === "Service Level" && <ServiceTable rows={serviceView} />}
@@ -1807,7 +1808,31 @@ function FIFOTable({ rows }: any) {
   );
 }
 
-function AlertView({ rows, allRows, alertFilter, setAlertFilter }: any) {
+function AlertView({
+  rows,
+  allRows,
+  stockRows,
+  alertFilter,
+  setAlertFilter,
+}: any) {
+  const [showAllStock, setShowAllStock] = useState(false);
+
+  const [colFilter, setColFilter] = useState<any>({
+    kategori: "",
+    plant: "",
+    sku: "",
+    nama: "",
+    merk: "",
+    batch: "",
+    datang: "",
+    expired: "",
+    hari: "",
+    qty: "",
+    kg: "",
+    lokasi: "",
+    note: "",
+  });
+
   const hold = allRows.filter((r: any) => r.category === "HOLD");
   const aging = allRows.filter((r: any) => r.category === "AGING");
   const exp30 = allRows.filter((r: any) => r.category === "EXP_30");
@@ -1815,6 +1840,7 @@ function AlertView({ rows, allRows, alertFilter, setAlertFilter }: any) {
   const exp90 = allRows.filter((r: any) => r.category === "EXP_90");
 
   function toggle(cat: string) {
+    setShowAllStock(false);
     setAlertFilter(alertFilter === cat ? "ALL" : cat);
   }
 
@@ -1824,45 +1850,186 @@ function AlertView({ rows, allRows, alertFilter, setAlertFilter }: any) {
     if (cat === "EXP_30") return "EXP <30";
     if (cat === "EXP_60") return "EXP <60";
     if (cat === "EXP_90") return "EXP <90";
+    if (cat === "ALL_STOCK") return "SEMUA BARANG";
     return cat;
+  }
+
+  function dayDiff(fromDate: any, toDate: any) {
+    if (!fromDate || !toDate) return "";
+
+    return Math.floor(
+      (new Date(toDate).getTime() - new Date(fromDate).getTime()) / 86400000
+    );
+  }
+
+  const today = new Date();
+
+  const allStockRows = stockRows.map((r: any) => {
+    const datang = r.tanggal_kedatangan
+      ? String(r.tanggal_kedatangan).slice(0, 10)
+      : "";
+
+    const expired = r.tanggal_expired
+      ? String(r.tanggal_expired).slice(0, 10)
+      : "";
+
+    const umur = r.tanggal_kedatangan
+      ? Math.floor(
+          (today.getTime() - new Date(r.tanggal_kedatangan).getTime()) /
+            86400000
+        )
+      : "";
+
+    return {
+      type: "SEMUA BARANG",
+      category: "ALL_STOCK",
+      rm: r.nama_rm,
+      sku: r.sku_rm,
+      merk: r.merk || "-",
+      batch: r.no_batch,
+      qty: r.tot_qty_kemasan,
+      kg: r.tot_qty_kg,
+      plant: r.plant,
+      lokasi: r.lokasi_rm,
+      tanggal_datang: datang,
+      tanggal_expired: expired,
+      value: umur,
+      value_label: umur === "" ? "-" : `${umur} hari`,
+      note: r.keterangan || r.note || "",
+      status: "",
+    };
+  });
+
+  const sourceRows = showAllStock ? allStockRows : rows;
+
+  function matchCol(r: any) {
+    const data: any = {
+      kategori: catLabel(r.category),
+      plant: r.plant,
+      sku: r.sku,
+      nama: r.rm,
+      merk: r.merk,
+      batch: r.batch,
+      datang: r.tanggal_datang,
+      expired: r.tanggal_expired,
+      hari: r.value_label || r.value,
+      qty: r.qty,
+      kg: r.kg,
+      lokasi: r.lokasi,
+      note: r.note || r.status,
+    };
+
+    return Object.keys(colFilter).every((key) => {
+      const f = String(colFilter[key] || "").toLowerCase().trim();
+
+      if (!f) return true;
+
+      return String(data[key] || "")
+        .toLowerCase()
+        .includes(f);
+    });
+  }
+
+  const finalRows = sourceRows.filter(matchCol);
+
+  function updateCol(key: string, value: string) {
+    setColFilter((old: any) => ({
+      ...old,
+      [key]: value,
+    }));
+  }
+
+  function clearColFilters() {
+    setColFilter({
+      kategori: "",
+      plant: "",
+      sku: "",
+      nama: "",
+      merk: "",
+      batch: "",
+      datang: "",
+      expired: "",
+      hari: "",
+      qty: "",
+      kg: "",
+      lokasi: "",
+      note: "",
+    });
+  }
+
+  function HeaderFilter({ label, id, w = 110 }: any) {
+    return (
+      <th>
+        <div className="th-filter">
+          <span>{label}</span>
+          <input
+            style={{ width: w }}
+            value={colFilter[id] || ""}
+            onChange={(e) => updateCol(id, e.target.value)}
+            placeholder="filter..."
+          />
+        </div>
+      </th>
+    );
   }
 
   return (
     <div className="alert-table-wrap">
-      <div className="alert-summary alert-summary-5">
+      <div className="alert-summary alert-summary-6">
         <button
-          className={`alert-stat hold-stat ${alertFilter === "HOLD" ? "active" : ""}`}
+          className={`alert-stat all-stock-stat ${showAllStock ? "active" : ""}`}
+          onClick={() => {
+            setShowAllStock(true);
+            setAlertFilter("ALL");
+          }}
+        >
+          <span>{allStockRows.length}</span>Semua Barang
+        </button>
+
+        <button
+          className={`alert-stat hold-stat ${!showAllStock && alertFilter === "HOLD" ? "active" : ""}`}
           onClick={() => toggle("HOLD")}
         >
           <span>{hold.length}</span>HOLD
         </button>
 
         <button
-          className={`alert-stat aging-stat ${alertFilter === "AGING" ? "active" : ""}`}
+          className={`alert-stat aging-stat ${!showAllStock && alertFilter === "AGING" ? "active" : ""}`}
           onClick={() => toggle("AGING")}
         >
           <span>{aging.length}</span>Lifetime &gt;4 Hari
         </button>
 
         <button
-          className={`alert-stat exp30-stat ${alertFilter === "EXP_30" ? "active" : ""}`}
+          className={`alert-stat exp30-stat ${!showAllStock && alertFilter === "EXP_30" ? "active" : ""}`}
           onClick={() => toggle("EXP_30")}
         >
           <span>{exp30.length}</span>Expired &lt;30 Hari
         </button>
 
         <button
-          className={`alert-stat exp60-stat ${alertFilter === "EXP_60" ? "active" : ""}`}
+          className={`alert-stat exp60-stat ${!showAllStock && alertFilter === "EXP_60" ? "active" : ""}`}
           onClick={() => toggle("EXP_60")}
         >
           <span>{exp60.length}</span>Expired &lt;60 Hari
         </button>
 
         <button
-          className={`alert-stat exp90-stat ${alertFilter === "EXP_90" ? "active" : ""}`}
+          className={`alert-stat exp90-stat ${!showAllStock && alertFilter === "EXP_90" ? "active" : ""}`}
           onClick={() => toggle("EXP_90")}
         >
           <span>{exp90.length}</span>Expired &lt;90 Hari
+        </button>
+      </div>
+
+      <div className="alert-toolbar">
+        <div>
+          Mode: <b>{showAllStock ? "Semua Barang Gudang" : "Alert Aktif"}</b>
+          <span className="muted"> · {finalRows.length} baris</span>
+        </div>
+
+        <button className="action-btn" onClick={clearColFilters}>
+          Reset Filter Kolom
         </button>
       </div>
 
@@ -1870,24 +2037,24 @@ function AlertView({ rows, allRows, alertFilter, setAlertFilter }: any) {
         <table className="data-table alert-clean-table">
           <thead>
             <tr>
-              <th>Kategori</th>
-              <th>Plant</th>
-              <th>SKU RM</th>
-              <th>Nama RM</th>
-              <th>Merk</th>
-              <th>Batch</th>
-              <th>Datang</th>
-              <th>Expired</th>
-              <th>Hari</th>
-              <th>Qty PCS</th>
-              <th>Qty KG</th>
-              <th>Lokasi</th>
-              <th>Note / Status</th>
+              <HeaderFilter label="Kategori" id="kategori" w={120} />
+              <HeaderFilter label="Plant" id="plant" w={70} />
+              <HeaderFilter label="SKU RM" id="sku" w={110} />
+              <HeaderFilter label="Nama RM" id="nama" w={180} />
+              <HeaderFilter label="Merk" id="merk" w={100} />
+              <HeaderFilter label="Batch" id="batch" w={110} />
+              <HeaderFilter label="Datang" id="datang" w={105} />
+              <HeaderFilter label="Expired" id="expired" w={105} />
+              <HeaderFilter label="Hari" id="hari" w={80} />
+              <HeaderFilter label="Qty PCS" id="qty" w={80} />
+              <HeaderFilter label="Qty KG" id="kg" w={80} />
+              <HeaderFilter label="Lokasi" id="lokasi" w={90} />
+              <HeaderFilter label="Note / Status" id="note" w={130} />
             </tr>
           </thead>
 
           <tbody>
-            {rows.map((r: any, i: number) => (
+            {finalRows.map((r: any, i: number) => (
               <tr key={i}>
                 <td>
                   <span className={`alert-pill alert-pill-${String(r.category).toLowerCase()}`}>
@@ -1920,10 +2087,10 @@ function AlertView({ rows, allRows, alertFilter, setAlertFilter }: any) {
               </tr>
             ))}
 
-            {!rows.length && (
+            {!finalRows.length && (
               <tr>
                 <td colSpan={13} className="muted" style={{ textAlign: "center", padding: 28 }}>
-                  Tidak ada data alert untuk filter ini.
+                  Tidak ada data untuk filter ini.
                 </td>
               </tr>
             )}
