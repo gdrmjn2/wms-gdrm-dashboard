@@ -1366,7 +1366,176 @@ function downloadStokJalurExcel() {
 
   XLSX.writeFile(wb, `STOK_JALUR_${plantName}_${dateName}.xlsx`);
 }
-  
+
+function downloadAlertCenterExcel() {
+  if (!alertView.length) {
+    alert("Data Alert Center kosong untuk filter ini.");
+    return;
+  }
+
+  function alertCategoryLabel(cat: any) {
+    if (cat === "HOLD") return "HOLD";
+    if (cat === "AGING") return "LIFETIME >4 HARI";
+    if (cat === "EXP_30") return "EXPIRED <30 HARI";
+    if (cat === "EXP_60") return "EXPIRED 31-60 HARI";
+    if (cat === "EXP_90") return "EXPIRED 61-90 HARI";
+    if (cat === "NORMAL") return "NORMAL / AMAN";
+    return String(cat || "-");
+  }
+
+  function getModeLabel() {
+    if (alertFilter === "SEMUA") return "SEMUA DATA";
+    if (alertFilter === "ALL") return "ALERT AKTIF";
+    return alertCategoryLabel(alertFilter);
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  const now = new Date();
+  const nowText = now.toLocaleString("id-ID");
+
+  const summaryMap = new Map<string, any>();
+
+  alertView.forEach((r: any) => {
+    const cat = alertCategoryLabel(r.category);
+
+    if (!summaryMap.has(cat)) {
+      summaryMap.set(cat, {
+        kategori: cat,
+        total_item: 0,
+        total_pcs: 0,
+        total_kg: 0,
+      });
+    }
+
+    const item = summaryMap.get(cat);
+
+    item.total_item += 1;
+    item.total_pcs += Number(r.qty || 0);
+    item.total_kg += Number(r.kg || 0);
+  });
+
+  const summaryRows: any[][] = [
+    ["WMS GDRM - ALERT CENTER"],
+    [`Plant: ${plant}`],
+    [`Mode: ${getModeLabel()}`],
+    [`Tanggal Filter: ${dateMode === "ALL" ? "ALL" : dateFilter}`],
+    [`Download: ${nowText}`],
+    [],
+    ["Kategori", "Jumlah Item", "Total PCS", "Total KG"],
+  ];
+
+  Array.from(summaryMap.values()).forEach((r: any) => {
+    summaryRows.push([
+      r.kategori,
+      r.total_item,
+      r.total_pcs,
+      r.total_kg,
+    ]);
+  });
+
+  summaryRows.push([]);
+  summaryRows.push([
+    "TOTAL",
+    alertView.length,
+    alertView.reduce((a: number, b: any) => a + Number(b.qty || 0), 0),
+    alertView.reduce((a: number, b: any) => a + Number(b.kg || 0), 0),
+  ]);
+
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+
+  wsSummary["!cols"] = [
+    { wch: 28 },
+    { wch: 14 },
+    { wch: 16 },
+    { wch: 16 },
+  ];
+
+  wsSummary["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
+  ];
+
+  XLSX.utils.book_append_sheet(wb, wsSummary, "SUMMARY");
+
+  const dataRows: any[][] = [
+    [
+      "No",
+      "Kategori",
+      "Plant",
+      "SKU RM",
+      "Nama RM",
+      "Merk",
+      "Batch",
+      "Tanggal Datang",
+      "Tanggal Expired",
+      "Hari / Sisa Hari",
+      "Qty PCS",
+      "Qty KG",
+      "Lokasi",
+      "Note",
+      "Status",
+    ],
+  ];
+
+  alertView.forEach((r: any, i: number) => {
+    dataRows.push([
+      i + 1,
+      alertCategoryLabel(r.category),
+      r.plant || "",
+      r.sku || "",
+      r.rm || "",
+      r.merk || "",
+      r.batch || "",
+      r.tanggal_datang || "",
+      r.tanggal_expired || "",
+      r.value_label || `${r.value || 0} hari`,
+      Number(r.qty || 0),
+      Number(r.kg || 0),
+      r.lokasi || "",
+      r.note || "",
+      r.status || "",
+    ]);
+  });
+
+  const wsData = XLSX.utils.aoa_to_sheet(dataRows);
+
+  wsData["!cols"] = [
+    { wch: 6 },
+    { wch: 24 },
+    { wch: 10 },
+    { wch: 16 },
+    { wch: 34 },
+    { wch: 18 },
+    { wch: 18 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 18 },
+    { wch: 12 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 28 },
+    { wch: 16 },
+  ];
+
+  wsData["!autofilter"] = {
+    ref: `A1:O${dataRows.length}`,
+  };
+
+  XLSX.utils.book_append_sheet(wb, wsData, "DATA_ALERT_CENTER");
+
+  const plantName = plant === "ALL" ? "ALL_PLANT" : plant;
+  const modeName = getModeLabel()
+    .replace(/\s+/g, "_")
+    .replace(/[^\w]/g, "");
+
+  const dateName = new Date().toISOString().slice(0, 10);
+
+  XLSX.writeFile(
+    wb,
+    `ALERT_CENTER_${plantName}_${modeName}_${dateName}.xlsx`
+  );
+}
+
 function downloadCurrentDataPDF() {
   let title = menu;
   let head: string[] = [];
@@ -1735,6 +1904,15 @@ function logout() {
       Excel Plant
     </button>
   )}
+  {menu === "Alert Center" && (
+  <button
+    className="action-btn primary"
+    onClick={downloadAlertCenterExcel}
+  >
+    <FileDown size={14} />
+    Excel
+  </button>
+)}
 
   <button
     className="action-btn primary"
