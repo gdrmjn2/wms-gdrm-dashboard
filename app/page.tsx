@@ -4,7 +4,26 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Sun, Moon, Search, FileDown, Send, Package, ArrowUpDown, Warehouse, TrendingUp, ClipboardList, Route, Bell, RefreshCcw, LogOut } from "lucide-react";
+import {
+  Sun,
+  Moon,
+  Search,
+  FileDown,
+  Send,
+  Package,
+  ArrowUpDown,
+  Warehouse,
+  TrendingUp,
+  ClipboardList,
+  Route,
+  Bell,
+  RefreshCcw,
+  LogOut,
+  Maximize2,
+  Minimize2,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "",
@@ -26,6 +45,21 @@ const fmt0 = (n: any) =>
 
 const fmt2 = (n: any) =>
   Number(n || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
+
+const INTERNAL_STOCK_PLANTS = ["1111", "1112", "1113"];
+
+function getKgDisplay(pcs: any, kg: any, mode: "ZERO" | "ACTUAL") {
+  const p = Number(pcs || 0);
+  const k = Number(kg || 0);
+
+  // Kalau PCS minus, KG aktual wajib tampil.
+  if (p < 0) return k;
+
+  // Kalau PCS habis dan mode ZERO, KG ditampilkan 0.
+  if (mode === "ZERO" && p === 0) return 0;
+
+  return k;
+}
 
 /* ─────────────────────────────────────────────
    PIN SCREEN
@@ -147,8 +181,10 @@ const [unlocked, setUnlocked] = useState(() => {
 
 });
   const [dark, setDark] = useState(true);
-  const [menu, setMenu] = useState("Stock Ready");
-  const [alertFilter, setAlertFilter] = useState("ALL");
+const [fullMode, setFullMode] = useState(false);
+const [menu, setMenu] = useState("Stock Ready");
+const [alertFilter, setAlertFilter] = useState("ALL");
+const [jalurKgMode, setJalurKgMode] = useState<"ZERO" | "ACTUAL">("ZERO");
 const [bonanStatusFilter, setBonanStatusFilter] = useState("ALL");
 const [plant, setPlant] = useState("ALL");
 const [search, setSearch] = useState("");
@@ -688,10 +724,17 @@ const stokJalurView = useMemo(() => {
     return okPlant && okDate && okSku && okMerk && okBatch;
   }
 
- // DATA_RM_KELUAR = mengurangi plant pemilik / plant_tujuan + sku_qr
+// DATA_RM_KELUAR = mengurangi stok internal.
+// Jika plant_tujuan internal 1111/1112/1113, pakai plant_tujuan.
+// Jika plant_tujuan luar, contoh 1108, pakai plant asal dari prefix SKU QR.
 keluar.forEach((r: any) => {
   const skuQr = cleanSkuQr(r.sku_qr);
-  const plantOwner = cleanPlant(r.plant_tujuan);
+  const plantTujuan = cleanPlant(r.plant_tujuan);
+  const plantDariSkuQr = cleanPlant(String(skuQr || "").split("x")[0]);
+
+  const plantOwner = INTERNAL_STOCK_PLANTS.includes(plantTujuan)
+    ? plantTujuan
+    : plantDariSkuQr;
 
   if (!skuQr || !plantOwner) return;
 
@@ -703,7 +746,8 @@ keluar.forEach((r: any) => {
     sku_qr: skuQr,
     tanggal: r.tanggal,
     jam: r.jam || "00:00:00",
-    plant_tujuan: plantOwner,
+    plant_tujuan: plantTujuan,
+    plant_owner: plantOwner,
     no_palet: r.no_palet,
     qty_kemasan: Number(r.qty_kemasan || 0),
     qty_kg: Number(r.qty_kg || 0),
@@ -1759,7 +1803,7 @@ function logout() {
   const nowLabel = new Date().toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 
   return (
-    <div className={`app-shell ${dark ? "dark" : "light"}`}>
+   <div className={`app-shell ${dark ? "dark" : "light"} ${fullMode ? "full-mode" : ""}`}>
 
       {/* ── TOPBAR ── */}
      <header className="topbar">
@@ -1801,6 +1845,14 @@ function logout() {
     >
       {dark ? <Sun size={16} /> : <Moon size={16} />}
     </button>
+
+    <button
+  className={`icon-round ${fullMode ? "active" : ""}`}
+  onClick={() => setFullMode(!fullMode)}
+  title={fullMode ? "Keluar mode full" : "Mode full layar"}
+>
+  {fullMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+</button>
 
     <button className="icon-round" onClick={logout} title="Logout">
       <LogOut size={16} />
@@ -1967,6 +2019,8 @@ function logout() {
   setJalurBatch={setJalurBatch}
   jalurMinusOnly={jalurMinusOnly}
   setJalurMinusOnly={setJalurMinusOnly}
+  jalurKgMode={jalurKgMode}
+  setJalurKgMode={setJalurKgMode}
   skuOptions={jalurSkuOptions}
   merkOptions={jalurMerkOptions}
   jalurDetail={jalurDetail}
@@ -2834,6 +2888,8 @@ function StokJalurTable({
   setJalurBatch,
   jalurMinusOnly,
   setJalurMinusOnly,
+  jalurKgMode,
+  setJalurKgMode,
   skuOptions,
   merkOptions,
   jalurDetail,
@@ -2896,6 +2952,29 @@ function StokJalurTable({
     {jalurMinusOnly ? "Minus Aktif" : "Tampilkan Minus"}
   </button>
 </div>
+
+        <div className="jalur-filter jalur-mode-filter">
+  <span className="muted sm">Mode KG</span>
+  <button
+    type="button"
+    className={`jalur-mode-btn${jalurKgMode === "ACTUAL" ? " active" : ""}`}
+    onClick={() =>
+      setJalurKgMode(jalurKgMode === "ZERO" ? "ACTUAL" : "ZERO")
+    }
+  >
+    {jalurKgMode === "ACTUAL" ? (
+      <>
+        <Eye size={14} />
+        KG Aktual
+      </>
+    ) : (
+      <>
+        <EyeOff size={14} />
+        KG 0 Mode
+      </>
+    )}
+  </button>
+</div>
       </div>
 
       <div className="jalur-scroll">
@@ -2914,7 +2993,8 @@ function StokJalurTable({
             {rows.map((r: any, i: number) => {
               const days = Object.values(r.daily || {}).sort((a: any, b: any) =>
                 String(a.date).localeCompare(String(b.date))
-              );
+              ); 
+      const sisaKgDisplay = getKgDisplay(r.sisa_pcs, r.sisa_kg, jalurKgMode);
 
               return (
                 <tr key={`${r.sku_qr}_${i}`}>
@@ -2946,13 +3026,14 @@ function StokJalurTable({
                   </td>
 
                   <td className="jalur-sticky jalur-akhir-col">
-                    <div className={`jalur-stock ${r.sisa_pcs > 0 ? "green" : "red"}`}>
-                      {fmt0(r.sisa_pcs)} pcs
-                    </div>
-                    <div className={`jalur-stock ${r.sisa_kg > 0 ? "green" : "red"}`}>
-                      {fmt2(r.sisa_kg)} kg
-                    </div>
-                  </td>
+  <div className={`jalur-stock ${r.sisa_pcs >= 0 ? "green" : "red"}`}>
+    {fmt0(r.sisa_pcs)} pcs
+  </div>
+
+  <div className={`jalur-stock ${Number(sisaKgDisplay) >= 0 ? "green" : "red"}`}>
+    {fmt2(sisaKgDisplay)} kg
+  </div>
+</td>
 
                   <td className="jalur-detail-col">
                     <div className="jalur-card-row">
@@ -2989,8 +3070,8 @@ function StokJalurTable({
                             </div>
 
                             <div className="jalur-day-sisa small">
-                              {fmt2(day.sisa_kg)} kg
-                            </div>
+  {fmt2(getKgDisplay(day.sisa_pcs, day.sisa_kg, jalurKgMode))} kg
+</div>
                           </button>
                         ))
                       ) : (
@@ -3047,7 +3128,7 @@ function StokJalurTable({
               <div>
                 <span>Sisa Akhir Hari</span>
                 <b>
-                  {fmt0(jalurDetail.day.sisa_pcs)} pcs | {fmt2(jalurDetail.day.sisa_kg)} kg
+                  {fmt0(jalurDetail.day.sisa_pcs)} pcs | {fmt2(getKgDisplay(jalurDetail.day.sisa_pcs, jalurDetail.day.sisa_kg, jalurKgMode))} kg
                 </b>
               </div>
             </div>
@@ -3074,7 +3155,7 @@ function StokJalurTable({
 </div>
 
                   <div className="timeline-sisa">
-                    Sisa setelah keluar: {fmt0(d.sisa_after_pcs)} pcs | {fmt2(d.sisa_after_kg)} kg
+                    Sisa setelah keluar: {fmt0(d.sisa_after_pcs)} pcs | {fmt2(getKgDisplay(d.sisa_after_pcs, d.sisa_after_kg, jalurKgMode))} kg
                   </div>
                 </div>
               ))}
