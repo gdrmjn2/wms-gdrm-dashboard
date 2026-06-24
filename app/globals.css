@@ -2282,3 +2282,79 @@ body { font-family: Inter, system-ui, -apple-system, sans-serif; }
   color:#22c55e;
   border:1px solid rgba(34,197,94,.35);
 }
+
+/* FULL SCREEN MODE */
+
+.app-shell.full-mode{
+  grid-template-columns:1fr;
+  grid-template-areas:
+    "topbar"
+    "main";
+}
+
+.app-shell.full-mode .sidebar{
+  display:none;
+}
+
+.app-shell.full-mode .metrics{
+  display:none;
+}
+
+.app-shell.full-mode .main{
+  padding:8px;
+  gap:0;
+}
+
+.app-shell.full-mode .panel{
+  border-radius:14px;
+  min-height:calc(100vh - 68px);
+}
+
+.app-shell.full-mode .panel-header{
+  padding:8px 12px;
+}
+
+.app-shell.full-mode .table-scroll{
+  min-height:0;
+}
+
+.icon-round.active{
+  border-color:var(--gold);
+  color:var(--gold);
+  background:var(--gold-dim);
+}
+
+/* STOK JALUR KG MODE */
+
+.jalur-mode-filter{
+  min-width:145px;
+}
+
+.jalur-mode-btn{
+  height:34px;
+  padding:0 14px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--surface2);
+  color:var(--muted);
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+  transition:.15s ease;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+
+.jalur-mode-btn:hover{
+  border-color:var(--gold);
+  color:var(--gold);
+}
+
+.jalur-mode-btn.active{
+  background:rgba(96,165,250,.14);
+  border-color:var(--blue);
+  color:var(--blue);
+  box-shadow:0 0 0 3px rgba(96,165,250,.10);
+}
